@@ -22,9 +22,25 @@ varying float v_fade;
 varying vec3 v_viewDir;
 varying float v_vposLen;
 
-varying vec2 v_texCoords;
+#ifdef USE_TRIPLANAR_SAMPLING
+	uniform float u_triplanarScaling;
+#else
+	varying vec2 v_texCoords;
+#endif
+
 varying vec3 v_pos;
 varying vec3 v_normal;
+
+#ifdef USE_TRIPLANAR_SAMPLING
+	vec4 triplanarSample(sampler2D texture, vec3 texcoords, vec3 normal)
+	{
+		vec4 colour = vec4(0.0);
+		colour += texture2D(texture, texcoords.zy/u_triplanarScaling) * abs(normal.x);
+		colour += texture2D(texture, texcoords.xz/u_triplanarScaling) * abs(normal.y);
+		colour += texture2D(texture, texcoords.xy/u_triplanarScaling) * abs(normal.z);
+		return colour;
+	}
+#endif
 
 vec3 calculateLight(vec3 l_vector, vec3 n_dir, float l_attenuation, vec3 l_col, float shininess, vec3 s_col, vec3 v_dir)
 {
@@ -63,13 +79,21 @@ void main()
 
 	if (u_texNum > 1)
 	{
+	#ifdef USE_TRIPLANAR_SAMPLING
+		vec4 col = triplanarSample(u_texture1, v_pos, normal);
+	#else
 		vec4 col = texture2D(u_texture1, v_texCoords);
+	#endif
 		shininess = col.a;
 		s_col = col.rgb;
 	}
 	if (u_texNum > 2)
 	{
+	#ifdef USE_TRIPLANAR_SAMPLING
+		vec4 col = triplanarSample(u_texture2, v_pos, normal);
+	#else
 		vec4 col = texture2D(u_texture2, v_texCoords);
+	#endif
 		emissive = col.rgb * col.a;
 	}
 
@@ -98,7 +122,11 @@ void main()
 	float fog_fac = (v_vposLen - fogmin) / (fogmax - fogmin);
 	fog_fac = clamp (fog_fac, 0.0, 1.0);
 
+#ifdef USE_TRIPLANAR_SAMPLING
+	vec4 texCol = triplanarSample(u_texture0, v_pos, normal);
+#else
 	vec4 texCol = texture2D(u_texture0, v_texCoords);
+#endif
 
 #ifdef HAS_TRANSPARENT
 	texCol.a *= v_fade;

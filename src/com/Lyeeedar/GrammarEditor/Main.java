@@ -104,8 +104,15 @@ public class Main extends JFrame {
 		setLocationRelativeTo(null);
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 
-		createMenuBar();
 		seperateFrame();
+		right();
+		createMenuBar();
+		
+		if (!load("temp.json"))
+		{
+			textArea.setText("{Main:{X:10,Y:10,Z:10,Rule:Box}, Box{Mesh:Box,Texture:data/textures/blank,TriplanarSample:false}");
+			textArea.setText(new Json().prettyPrint(textArea.getText()));
+		}
 
 		LwjglApplicationConfiguration cfg = new LwjglApplicationConfiguration();
 		cfg.title = "ParticleEditor";
@@ -119,7 +126,6 @@ public class Main extends JFrame {
 
 		setVisible(true);
 
-		right();
 	}
 
 	public void save()
@@ -165,6 +171,47 @@ public class Main extends JFrame {
 		} else {
 
 		}
+	}
+	
+	public boolean load(String path)
+	{
+		File file = new File(path);
+
+		if (!file.exists()) return false;
+		
+		String text = null;
+
+		BufferedReader br = null;
+		try {
+			br = new BufferedReader(new FileReader(file));
+		} catch (FileNotFoundException e1) {
+			e1.printStackTrace();
+		}
+		try {
+			StringBuilder sb = new StringBuilder();
+			String line = br.readLine();
+
+			while (line != null) {
+				sb.append(line);
+				sb.append("\n");
+				line = br.readLine();
+			}
+			text = sb.toString();
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		} finally {
+			try {
+				br.close();
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+		}
+
+		textArea.setText(text);
+
+		right();
+		
+		return true;
 	}
 	
 	public void right()
@@ -222,7 +269,6 @@ public class Main extends JFrame {
 			@Override
 			public void actionPerformed(ActionEvent arg0)
 			{
-				JsonValue content = new JsonReader().parse(textArea.getText());
 				int caretpos = textArea.getCaretPosition();
 				textArea.setText(new Json().prettyPrint(textArea.getText()));
 				textArea.setCaretPosition(caretpos);
@@ -321,39 +367,7 @@ public class Main extends JFrame {
 					String path = fc.getSelectedFile().getAbsolutePath();
 					current = path;
 
-					File file = new File(path);
-
-					String text = null;
-
-					BufferedReader br = null;
-					try {
-						br = new BufferedReader(new FileReader(file));
-					} catch (FileNotFoundException e1) {
-						e1.printStackTrace();
-					}
-					try {
-						StringBuilder sb = new StringBuilder();
-						String line = br.readLine();
-
-						while (line != null) {
-							sb.append(line);
-							sb.append("\n");
-							line = br.readLine();
-						}
-						text = sb.toString();
-					} catch (IOException e1) {
-						e1.printStackTrace();
-					} finally {
-						try {
-							br.close();
-						} catch (IOException e1) {
-							e1.printStackTrace();
-						}
-					}
-
-					textArea.setText(text);
-
-					right();
+					load(path);
 
 				} else {
 
@@ -408,6 +422,8 @@ public class Main extends JFrame {
 		float dist = 50;
 		float Xangle = 0;
 		float Yangle = 0;
+		
+		Vector3 position = new Vector3();
 
 		Vector3 tmp = new Vector3();
 		Matrix4 tmpMat = new Matrix4();
@@ -482,12 +498,32 @@ public class Main extends JFrame {
 
 			if (Gdx.input.isKeyPressed(Keys.UP))
 			{
-				dist -= Gdx.graphics.getDeltaTime() * 10;
+				forward_backward(Gdx.graphics.getDeltaTime()*50);
 			}
 
 			if (Gdx.input.isKeyPressed(Keys.DOWN))
 			{
-				dist += Gdx.graphics.getDeltaTime() * 10;
+				forward_backward(-Gdx.graphics.getDeltaTime()*50);
+			}
+			
+			if (Gdx.input.isKeyPressed(Keys.LEFT))
+			{
+				left_right(Gdx.graphics.getDeltaTime()*50);
+			}
+			
+			if (Gdx.input.isKeyPressed(Keys.RIGHT))
+			{
+				left_right(-Gdx.graphics.getDeltaTime()*50);
+			}
+			
+			if (Gdx.input.isKeyPressed(Keys.PAGE_UP))
+			{
+				position.y += Gdx.graphics.getDeltaTime()*50;
+			}
+			
+			if (Gdx.input.isKeyPressed(Keys.PAGE_DOWN))
+			{
+				position.y -= Gdx.graphics.getDeltaTime()*50;
 			}
 
 			if (Gdx.input.isTouched())
@@ -507,10 +543,22 @@ public class Main extends JFrame {
 			cam.direction.rotate(Xangle, 0, 1, 0);
 			Yrotate(Yangle);
 
-			tmp.set(cam.direction).scl(-1*dist);
+			tmp.set(cam.direction).scl(-1*dist).add(position);
 			cam.position.set(tmp);
 
 			cam.update();
+		}
+		
+		public void left_right(float mag)
+		{
+			position.x += cam.direction.z * mag;
+			position.z += -cam.direction.x * mag;
+		}
+
+		public void forward_backward(float mag)
+		{
+			position.x += cam.direction.x * mag;
+			position.z += cam.direction.z * mag;
 		}
 
 		public void Yrotate (float angle) {	
@@ -568,14 +616,11 @@ class NewLineFilter extends DocumentFilter
 			String wspc = addWhiteSpace(fb.getDocument(), offs);
 			resetOffs += wspc.length();
 			str = wspc;
-			System.out.println("char: "+fb.getDocument().getText(offs-1, 1));
 			
 			for (String[] pair : autoClose)
 			{
 				if (fb.getDocument().getText(offs-1, 1).equals(pair[0]))
-				{
-					System.out.println("Adding: "+wspc+pair[1]);
-					
+				{				
 					resetOffs += 1;
 					str += "\t";
 					str += wspc+pair[1];
