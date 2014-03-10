@@ -2,6 +2,7 @@ package com.Lyeeedar.GrammarEditor;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.Event;
 import java.awt.EventQueue;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -9,6 +10,7 @@ import java.awt.GridLayout;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.BufferedReader;
@@ -20,6 +22,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
 
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.ActionMap;
+import javax.swing.InputMap;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
@@ -31,14 +37,22 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.KeyStroke;
 import javax.swing.UIManager;
+import javax.swing.event.UndoableEditEvent;
+import javax.swing.event.UndoableEditListener;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultEditorKit;
 import javax.swing.text.Document;
 import javax.swing.text.DocumentFilter;
 import javax.swing.text.Element;
+import javax.swing.text.JTextComponent;
+import javax.swing.undo.CannotRedoException;
+import javax.swing.undo.CannotUndoException;
+import javax.swing.undo.UndoManager;
 
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.MinimalPositionalData;
@@ -63,15 +77,19 @@ import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Json;
+import com.badlogic.gdx.utils.JsonReader;
+import com.badlogic.gdx.utils.JsonValue;
 
 public class Main extends JFrame {
 
+	String current = "";
 	JPanel left;
 	JPanel right;
 	JPanel bottom;
-	JTextArea textArea;
+	EnhancedJTextArea textArea;
 
 	final Renderer renderer;
 
@@ -104,18 +122,66 @@ public class Main extends JFrame {
 		right();
 	}
 
+	public void save()
+	{
+		File file = new File(current);
+		final JFileChooser fc = new JFileChooser(file.getAbsolutePath());
+		fc.setSelectedFile(file);
+		int returnVal = fc.showSaveDialog(Main.this);
+
+		if (returnVal == JFileChooser.APPROVE_OPTION) {
+			String path = fc.getSelectedFile().getAbsolutePath();
+
+			if (path.endsWith(".json")){}
+			else path += ".json";
+			
+			current = path;
+
+			file = new File(path);
+
+			try {
+				file.createNewFile();
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+
+			String text = textArea.getText();
+
+			BufferedWriter writer = null;
+			try{
+				writer = new BufferedWriter(new FileWriter(file));
+				writer.write(text);
+			}catch ( IOException argh1){}
+			finally{
+				try{
+					if ( writer != null)
+						writer.close( );
+					JOptionPane.showMessageDialog(Main.this,
+							"Grammar saved",
+							"",
+							JOptionPane.PLAIN_MESSAGE);
+				}catch ( IOException eargh2){}
+			}
+		} else {
+
+		}
+	}
+	
 	public void right()
 	{
 		right.removeAll();
 		right.setLayout(new BorderLayout());
 		
+		JPanel buttonPanel = new JPanel();
+		right.add(buttonPanel, BorderLayout.NORTH);
+
 		JButton button = new JButton("Refresh");
 		button.addActionListener(new ActionListener(){
 
 			@Override
 			public void actionPerformed(ActionEvent arg0)
 			{
-				
+
 				String path = new File("temp").getAbsolutePath();
 
 				if (path.endsWith(".json")){}
@@ -130,7 +196,6 @@ public class Main extends JFrame {
 				}
 
 				String text = textArea.getText();
-				System.out.println(text);
 
 				BufferedWriter writer = null;
 				try{
@@ -143,23 +208,37 @@ public class Main extends JFrame {
 							writer.close( );
 					}catch ( IOException eargh2){}
 				}
-				
+
 				renderer.reloadMesh("temp.json");
-				
-				
+
+
+			}});
+
+		buttonPanel.add(button);
+		
+		JButton indent = new JButton("Correct Indentation");
+		indent.addActionListener(new ActionListener(){
+
+			@Override
+			public void actionPerformed(ActionEvent arg0)
+			{
+				JsonValue content = new JsonReader().parse(textArea.getText());
+				int caretpos = textArea.getCaretPosition();
+				textArea.setText(new Json().prettyPrint(textArea.getText()));
+				textArea.setCaretPosition(caretpos);
 			}});
 		
-		right.add(button, BorderLayout.NORTH);
+		buttonPanel.add(indent);
 
 		if (textArea == null)
 		{
-			textArea = new JTextArea(50, 50);
+			textArea = new EnhancedJTextArea(this);
 			textArea.setEditable(true);
-			
+
 			AbstractDocument doc = (AbstractDocument)textArea.getDocument();
-	        doc.setDocumentFilter( new NewLineFilter() );
+			doc.setDocumentFilter( new NewLineFilter(textArea) );
 		}
-		
+
 		JScrollPane panel = new JScrollPane(textArea);
 
 		right.add(panel);
@@ -167,7 +246,7 @@ public class Main extends JFrame {
 		right.revalidate();
 		right.repaint();
 	}
-	
+
 	public void seperateFrame()
 	{
 		left = new JPanel();
@@ -198,43 +277,7 @@ public class Main extends JFrame {
 		miSave.addActionListener(new ActionListener(){
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				final JFileChooser fc = new JFileChooser(new File("").getAbsolutePath());
-				int returnVal = fc.showSaveDialog(Main.this);
-
-				if (returnVal == JFileChooser.APPROVE_OPTION) {
-					String path = fc.getSelectedFile().getAbsolutePath();
-
-					if (path.endsWith(".json")){}
-					else path += ".json";
-
-					File file = new File(path);
-
-					try {
-						file.createNewFile();
-					} catch (IOException e1) {
-						e1.printStackTrace();
-					}
-
-					String text = textArea.getText();
-
-					BufferedWriter writer = null;
-					try{
-						writer = new BufferedWriter(new FileWriter(file));
-						writer.write(text);
-					}catch ( IOException argh1){}
-					finally{
-						try{
-							if ( writer != null)
-								writer.close( );
-							JOptionPane.showMessageDialog(Main.this,
-									"Grammar saved",
-									"",
-									JOptionPane.PLAIN_MESSAGE);
-						}catch ( IOException eargh2){}
-					}
-				} else {
-
-				}
+				save();
 			}});
 
 		JMenuItem miLoad = new JMenuItem("Load");
@@ -251,7 +294,7 @@ public class Main extends JFrame {
 
 						String extension = getExtension(f);
 
-						if (extension.equals("effect")) return true;
+						if (extension.equals("json")) return true;
 
 						return false;
 					}
@@ -269,13 +312,14 @@ public class Main extends JFrame {
 
 					@Override
 					public String getDescription() {
-						return "Effects only";
+						return "Json only";
 					}
 				});
 				int returnVal = fc.showOpenDialog(Main.this);
 
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
 					String path = fc.getSelectedFile().getAbsolutePath();
+					current = path;
 
 					File file = new File(path);
 
@@ -350,7 +394,7 @@ public class Main extends JFrame {
 	class Renderer implements ApplicationListener
 	{
 		Controls controls;
-		
+
 		BitmapFont font;
 		SpriteBatch batch;
 		PerspectiveCamera cam;
@@ -360,19 +404,20 @@ public class Main extends JFrame {
 
 		int width;
 		int height;
-		
-		float dist = 5;
+
+		float dist = 50;
 		float Xangle = 0;
 		float Yangle = 0;
-		
+
 		Vector3 tmp = new Vector3();
-		
+		Matrix4 tmpMat = new Matrix4();
+
 		@Override
 		public void create() {
 
 			controls = new Controls(false);
 			Gdx.input.setInputProcessor(controls.ip);
-			
+
 			font = new BitmapFont();
 			batch = new SpriteBatch();
 
@@ -381,16 +426,16 @@ public class Main extends JFrame {
 			lightManager.directionalLight.direction.set(-0.5f, 1, 1).nor();
 			lightManager.directionalLight.colour.set(0.5f, 0.5f, 0.5f);
 			lightManager.sort(new Vector3());
-			
+
 			entity = new Entity(false, new MinimalPositionalData());
-			
+
 			batches.put(ModelBatchers.class, new ModelBatchers());
 		}
-		
+
 		public void reloadMesh(String file)
 		{
 			entity.clearRenderables();
-			
+
 			VolumePartitioner vp = VolumePartitioner.load(file);
 			vp.evaluate();
 			vp.collectMeshes(entity);
@@ -404,18 +449,18 @@ public class Main extends JFrame {
 			cam = new PerspectiveCamera(75, width, height);
 			cam.near = 1.0f;
 			cam.far = 5000f;
-			
+
 			cam.direction.set(GLOBALS.DEFAULT_ROTATION);
 			cam.direction.rotate(Xangle, 0, 1, 0);
 			Yrotate(Yangle);
-			
+
 			if (cam.direction.isZero(0.01f)) cam.direction.set(GLOBALS.DEFAULT_ROTATION);
-			
+
 			if (cam.direction.isZero(0.01f)) cam.direction.set(GLOBALS.DEFAULT_ROTATION);
-			
+
 			tmp.set(cam.direction).scl(-1*dist);
 			cam.position.set(tmp);
-			
+
 			cam.update();
 		}
 
@@ -431,15 +476,15 @@ public class Main extends JFrame {
 
 			entity.update(Gdx.app.getGraphics().getDeltaTime());
 			entity.queueRenderables(cam, lightManager, Gdx.app.getGraphics().getDeltaTime(), batches);
-			
+
 			((ModelBatchers) batches.get(ModelBatchers.class)).renderSolid(lightManager, cam);
 			((ModelBatchers) batches.get(ModelBatchers.class)).renderTransparent(lightManager, cam);
-			
+
 			if (Gdx.input.isKeyPressed(Keys.UP))
 			{
 				dist -= Gdx.graphics.getDeltaTime() * 10;
 			}
-			
+
 			if (Gdx.input.isKeyPressed(Keys.DOWN))
 			{
 				dist += Gdx.graphics.getDeltaTime() * 10;
@@ -448,27 +493,26 @@ public class Main extends JFrame {
 			if (Gdx.input.isTouched())
 			{
 				Xangle -= controls.getDeltaX();
-				//Yangle -= controls.getDeltaY();
+				Yangle -= controls.getDeltaY();
 			}
-			
+
 			dist += controls.scrolled();
 			dist = MathUtils.clamp(dist, 5, 500);
-			
+
 			if (Yangle > 60) Yangle = 60;
 			if (Yangle < -60) Yangle = -60;
-			
+
 			cam.direction.set(GLOBALS.DEFAULT_ROTATION);
+			cam.up.set(GLOBALS.DEFAULT_UP);
 			cam.direction.rotate(Xangle, 0, 1, 0);
 			Yrotate(Yangle);
-			
-			if (cam.direction.isZero(0.01f)) cam.direction.set(GLOBALS.DEFAULT_ROTATION);
-			
+
 			tmp.set(cam.direction).scl(-1*dist);
 			cam.position.set(tmp);
-			
+
 			cam.update();
 		}
-		
+
 		public void Yrotate (float angle) {	
 			Vector3 dir = tmp.set(cam.direction).nor();
 			if(dir.y>-0.7 && angle<0 || dir.y<+0.7 && angle>0)
@@ -498,45 +542,250 @@ public class Main extends JFrame {
 
 class NewLineFilter extends DocumentFilter
 {
-    public void insertString(FilterBypass fb, int offs, String str, AttributeSet a)
-        throws BadLocationException
-    {
-        if ("\n".equals(str))
-            str = addWhiteSpace(fb.getDocument(), offs);
+	private final JTextArea textArea;
+	private final String[][] autoClose = {{"(", ")"}, {"[", "]"}, {"{", "}"}};
+	public NewLineFilter(EnhancedJTextArea textArea)
+	{
+		this.textArea = textArea;
+	}
+	
+	public void insertString(FilterBypass fb, int offs, String str, AttributeSet a) throws BadLocationException
+	{
+		if (str.equals("\n"))
+		{
+			str = addWhiteSpace(fb.getDocument(), offs);
+		}
 
-        super.insertString(fb, offs, str, a);
-    }
+		super.insertString(fb, offs, str, a);
+	}
 
-    public void replace(FilterBypass fb, int offs, int length, String str, AttributeSet a)
-        throws BadLocationException
-    {
-        if ("\n".equals(str))
-            str = addWhiteSpace(fb.getDocument(), offs);
+	public void replace(FilterBypass fb, int offs, int length, String str, AttributeSet a) throws BadLocationException
+	{
+		boolean reset = false;
+		int resetOffs = offs;
+		if (str.equals("\n"))
+		{
+			String wspc = addWhiteSpace(fb.getDocument(), offs);
+			resetOffs += wspc.length();
+			str = wspc;
+			System.out.println("char: "+fb.getDocument().getText(offs-1, 1));
+			
+			for (String[] pair : autoClose)
+			{
+				if (fb.getDocument().getText(offs-1, 1).equals(pair[0]))
+				{
+					System.out.println("Adding: "+wspc+pair[1]);
+					
+					resetOffs += 1;
+					str += "\t";
+					str += wspc+pair[1];
+					reset = true;
+				}
+			}
 
-        super.replace(fb, offs, length, str, a);
-    }
+		}
 
-    private String addWhiteSpace(Document doc, int offset)
-        throws BadLocationException
-    {
-        StringBuilder whiteSpace = new StringBuilder("\n");
-        Element rootElement = doc.getDefaultRootElement();
-        int line = rootElement.getElementIndex( offset );
-        int i = rootElement.getElement(line).getStartOffset();
+		super.replace(fb, offs, length, str, a);
+		
+		
+		if (reset) textArea.setCaretPosition(resetOffs);
+	}
 
-        while (true)
-        {
-            String temp = doc.getText(i, 1);
+	private String addWhiteSpace(Document doc, int offset) throws BadLocationException
+	{
+		StringBuilder whiteSpace = new StringBuilder("\n");
+		Element rootElement = doc.getDefaultRootElement();
+		int line = rootElement.getElementIndex( offset );
+		int i = rootElement.getElement(line).getStartOffset();
 
-            if (temp.equals(" ") || temp.equals("\t"))
-            {
-                whiteSpace.append(temp);
-                i++;
-            }
-            else
-                break;
-        }
+		while (true)
+		{
+			String temp = doc.getText(i, 1);
 
-        return whiteSpace.toString();
-    }
+			if (temp.equals(" ") || temp.equals("\t"))
+			{
+				whiteSpace.append(temp);
+				i++;
+			}
+			else
+				break;
+		}
+
+		return whiteSpace.toString();
+	}
+}
+
+class EnhancedJTextArea extends JTextArea
+{
+	protected UndoAction undoAction;
+	protected RedoAction redoAction;
+	protected SaveAction saveAction;
+	protected UndoManager undo = new UndoManager();
+	private final Main mainFrame;
+
+	public EnhancedJTextArea(Main mainFrame)
+	{
+		super(50, 75);
+		this.getDocument().addUndoableEditListener(new MyUndoableEditListener());
+		this.setTabSize(4);
+		
+		this.mainFrame = mainFrame;
+
+		undoAction = new UndoAction();
+		redoAction = new RedoAction();
+		saveAction = new SaveAction();
+		saveAction.updateSave();
+
+		addBindings();
+	}
+
+	public Action getUndoAction()
+	{
+		return undoAction;
+	}
+
+	public Action getRedoAction()
+	{
+		return redoAction;
+	}
+
+	protected void addBindings() {
+		InputMap inputMap = this.getInputMap();
+		ActionMap actionMap = this.getActionMap();
+
+		//Ctrl-b to go backward one character
+		KeyStroke key = KeyStroke.getKeyStroke(KeyEvent.VK_B, Event.CTRL_MASK);
+		inputMap.put(key, DefaultEditorKit.backwardAction);
+
+		//Ctrl-f to go forward one character
+		key = KeyStroke.getKeyStroke(KeyEvent.VK_F, Event.CTRL_MASK);
+		inputMap.put(key, DefaultEditorKit.forwardAction);
+
+		//Ctrl-p to go up one line
+		key = KeyStroke.getKeyStroke(KeyEvent.VK_P, Event.CTRL_MASK);
+		inputMap.put(key, DefaultEditorKit.upAction);
+
+		//Ctrl-n to go down one line
+		key = KeyStroke.getKeyStroke(KeyEvent.VK_N, Event.CTRL_MASK);
+		inputMap.put(key, DefaultEditorKit.downAction);
+
+		key = KeyStroke.getKeyStroke(KeyEvent.VK_Z, Event.CTRL_MASK);
+		inputMap.put(key, "Undo");
+		actionMap.put("Undo", undoAction);
+
+		key = KeyStroke.getKeyStroke(KeyEvent.VK_Y, Event.CTRL_MASK);
+		inputMap.put(key, "Redo");
+		actionMap.put("Redo", redoAction);
+		
+		key = KeyStroke.getKeyStroke(KeyEvent.VK_S, Event.CTRL_MASK);
+		inputMap.put(key, "Save");
+		actionMap.put("Save", saveAction);
+
+//		inputMap.put(KeyStroke.getKeyStroke("typed ("), "typed (");
+//		actionMap.put("typed (", new BracketAction());
+	}
+
+	protected class MyUndoableEditListener implements UndoableEditListener {
+		public void undoableEditHappened(UndoableEditEvent e) {
+			//Remember the edit and update the menus
+			undo.addEdit(e.getEdit());
+			undoAction.updateUndoState();
+			redoAction.updateRedoState();
+		}
+	} 
+
+	class BracketAction extends AbstractAction
+	{
+
+		@Override
+		public void actionPerformed(ActionEvent e)
+		{
+			JTextComponent tc = (JTextComponent)e.getSource();
+			try
+			{
+				int position = tc.getCaretPosition();
+				tc.getDocument().insertString(position, "()", null);
+				tc.setCaretPosition(position + 1);
+			}
+			catch(Exception e2) {}
+		}
+
+	}
+	
+	class SaveAction extends AbstractAction
+	{
+		public SaveAction() {
+			super("Save");
+			setEnabled(false);
+		}
+		
+		@Override
+		public void actionPerformed(ActionEvent arg0)
+		{
+			mainFrame.save();
+			
+		}
+		
+		public void updateSave()
+		{
+			putValue(Action.NAME, "Save");
+			setEnabled(true);
+		}
+	}
+
+	class UndoAction extends AbstractAction {
+		public UndoAction() {
+			super("Undo");
+			setEnabled(false);
+		}
+
+		public void actionPerformed(ActionEvent e) {
+			try {
+				undo.undo();
+			} catch (CannotUndoException ex) {
+				System.out.println("Unable to undo: " + ex);
+				ex.printStackTrace();
+			}
+			updateUndoState();
+			redoAction.updateRedoState();
+		}
+
+		protected void updateUndoState() {
+			if (undo.canUndo()) {
+				setEnabled(true);
+				putValue(Action.NAME, undo.getUndoPresentationName());
+			} else {
+				setEnabled(false);
+				putValue(Action.NAME, "Undo");
+			}
+		}
+	}
+
+	class RedoAction extends AbstractAction {
+		public RedoAction() {
+			super("Redo");
+			setEnabled(false);
+		}
+
+		public void actionPerformed(ActionEvent e) {
+			try {
+				undo.redo();
+			} catch (CannotRedoException ex) {
+				System.out.println("Unable to redo: " + ex);
+				ex.printStackTrace();
+			}
+			updateRedoState();
+			undoAction.updateUndoState();
+		}
+
+		protected void updateRedoState() {
+			if (undo.canRedo()) {
+				setEnabled(true);
+				putValue(Action.NAME, undo.getRedoPresentationName());
+			} else {
+				setEnabled(false);
+				putValue(Action.NAME, "Redo");
+			}
+		}
+	}
 }
