@@ -24,12 +24,15 @@ varying float v_vposLen;
 varying vec3 v_pos;
 varying vec3 v_normal;
 
+uniform mat4 u_depthBiasMVP;
+varying vec4 v_shadowCoords;
+
 void main()
 {	
 	vec4 worldPos = u_mm[gl_InstanceID] * vec4(a_position, 1.0);
 	gl_Position = u_pv * worldPos;
 
-	v_fade = 1.0;//fade[gl_InstanceID];
+	v_fade = 1.0;
 
 	v_pos = worldPos.xyz;
 	v_normal = (transpose(inverse(u_mm[gl_InstanceID])) * vec4(a_normal, 0.0)).xyz;
@@ -42,4 +45,6 @@ void main()
 #else
 	v_texCoords = a_texCoord0;
 #endif
+
+	v_shadowCoords = u_depthBiasMVP * worldPos;
 }

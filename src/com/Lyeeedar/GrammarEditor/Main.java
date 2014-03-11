@@ -4,8 +4,6 @@ import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Event;
 import java.awt.EventQueue;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
@@ -54,25 +52,23 @@ import javax.swing.undo.CannotRedoException;
 import javax.swing.undo.CannotUndoException;
 import javax.swing.undo.UndoManager;
 
+import com.Lyeeedar.Collision.Octtree;
+import com.Lyeeedar.Collision.Octtree.OcttreeEntry;
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.MinimalPositionalData;
 import com.Lyeeedar.Graphics.Batchers.Batch;
-import com.Lyeeedar.Graphics.Batchers.ParticleEffectBatch;
-import com.Lyeeedar.Graphics.Batchers.ModelBatcher.ModelBatchers;
+import com.Lyeeedar.Graphics.Batchers.ModelBatcher;
 import com.Lyeeedar.Graphics.Lights.LightManager;
-import com.Lyeeedar.Graphics.Particles.ParticleEffect;
-import com.Lyeeedar.Graphics.Particles.ParticleEmitter;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Pirates.ProceduralGeneration.LSystems.VolumePartitioner;
 import com.Lyeeedar.Util.Controls;
-import com.Lyeeedar.Util.ImageUtils;
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration;
 import com.badlogic.gdx.backends.lwjgl.LwjglCanvas;
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.GL30;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -80,8 +76,6 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Json;
-import com.badlogic.gdx.utils.JsonReader;
-import com.badlogic.gdx.utils.JsonValue;
 
 public class Main extends JFrame {
 
@@ -110,8 +104,7 @@ public class Main extends JFrame {
 		
 		if (!load("temp.json"))
 		{
-			textArea.setText("{Main:{X:10,Y:10,Z:10,Rule:Box}, Box{Mesh:Box,Texture:data/textures/blank,TriplanarSample:false}");
-			textArea.setText(new Json().prettyPrint(textArea.getText()));
+			newGrammar();
 		}
 
 		LwjglApplicationConfiguration cfg = new LwjglApplicationConfiguration();
@@ -128,6 +121,12 @@ public class Main extends JFrame {
 
 	}
 
+	public void newGrammar()
+	{
+		textArea.setText("{Main:{X:10,Y:10,Z:10,Rule:Box}, Box:{Mesh: { Name:Box,Texture:data/textures/blank,TriplanarSample:false}}}");
+		textArea.setText(new Json().prettyPrint(textArea.getText(), 50));
+	}
+	
 	public void save()
 	{
 		File file = new File(current);
@@ -270,7 +269,7 @@ public class Main extends JFrame {
 			public void actionPerformed(ActionEvent arg0)
 			{
 				int caretpos = textArea.getCaretPosition();
-				textArea.setText(new Json().prettyPrint(textArea.getText()));
+				textArea.setText(new Json().prettyPrint(textArea.getText(), 50));
 				textArea.setCaretPosition(caretpos);
 			}});
 		
@@ -319,6 +318,14 @@ public class Main extends JFrame {
 		menuBar.add(fileMenu);
 
 		JMenuItem miNew = new JMenuItem("New");
+		miNew.addActionListener(new ActionListener(){
+
+			@Override
+			public void actionPerformed(ActionEvent arg0)
+			{
+				newGrammar();
+			}});
+		
 		JMenuItem miSave = new JMenuItem("Save");
 		miSave.addActionListener(new ActionListener(){
 			@Override
@@ -427,6 +434,7 @@ public class Main extends JFrame {
 
 		Vector3 tmp = new Vector3();
 		Matrix4 tmpMat = new Matrix4();
+		OcttreeEntry<Entity> entry;
 
 		@Override
 		public void create() {
@@ -438,14 +446,22 @@ public class Main extends JFrame {
 			batch = new SpriteBatch();
 
 			lightManager = new LightManager();
-			lightManager.ambientColour.set(0.6f, 0.6f, 0.6f);
+			lightManager.ambientColour.set(0.3f, 0.3f, 0.3f);
 			lightManager.directionalLight.direction.set(-0.5f, 1, 1).nor();
-			lightManager.directionalLight.colour.set(0.5f, 0.5f, 0.5f);
+			lightManager.directionalLight.colour.set(1.0f, 1.0f, 1.0f);
 			lightManager.sort(new Vector3());
+			lightManager.enableShadowMapping();
+			
+			GLOBALS.LIGHTS = lightManager;
 
 			entity = new Entity(false, new MinimalPositionalData());
-
-			batches.put(ModelBatchers.class, new ModelBatchers());
+			
+			batches.put(ModelBatcher.class, new ModelBatcher(false));
+			
+			GLOBALS.renderTree = new Octtree<Entity>();
+			
+			entry = GLOBALS.renderTree.createEntry(entity, new Vector3(), new Vector3(1, 1, 1), Octtree.MASK_RENDER | Octtree.MASK_SHADOW_CASTING);
+			GLOBALS.renderTree.add(entry);
 		}
 
 		public void reloadMesh(String file)
@@ -453,8 +469,13 @@ public class Main extends JFrame {
 			entity.clearRenderables();
 
 			VolumePartitioner vp = VolumePartitioner.load(file);
+			
 			vp.evaluate();
-			vp.collectMeshes(entity);
+			vp.collectMeshes(entity, entry, null);
+			entry.updatePosition();
+			
+			entity.queueRenderables(cam, lightManager, Gdx.app.getGraphics().getDeltaTime(), batches);
+			((ModelBatcher) batches.get(ModelBatcher.class)).clear();
 		}
 
 		@Override
@@ -477,24 +498,74 @@ public class Main extends JFrame {
 			tmp.set(cam.direction).scl(-1*dist);
 			cam.position.set(tmp);
 
-			cam.update();
+			cam.update();			
 		}
 
+		boolean increase = true;
+		public void updateLight(float delta)
+		{			
+			delta /= 10;
+			
+			if (increase) 
+			{
+				GLOBALS.LIGHTS.directionalLight.direction.y += delta;
+				
+				if (GLOBALS.LIGHTS.directionalLight.direction.y < 0.0f) 
+				{
+					GLOBALS.LIGHTS.directionalLight.direction.z += delta;
+				}
+				else
+				{
+					GLOBALS.LIGHTS.directionalLight.direction.z -= delta;
+				}
+			}
+			else 
+			{
+				GLOBALS.LIGHTS.directionalLight.direction.y -= delta;
+				
+				if (GLOBALS.LIGHTS.directionalLight.direction.y < 0.0f) 
+				{
+					GLOBALS.LIGHTS.directionalLight.direction.z += delta;
+				}
+				else
+				{
+					GLOBALS.LIGHTS.directionalLight.direction.z -= delta;
+				}
+			}
+			
+			if (GLOBALS.LIGHTS.directionalLight.direction.y >= 1.0f) increase = false;
+			if (GLOBALS.LIGHTS.directionalLight.direction.y < -1) increase = true;
+			
+			lightManager.sort(tmp.set(0, 0, 0));
+		}
+		
 		HashMap<Class, Batch> batches = new HashMap<Class, Batch>();
 		@Override
 		public void render() {
 
-			Gdx.graphics.getGL20().glClearColor(0.5f, 0.5f, 0.5f, 0.0f);
-			Gdx.graphics.getGL20().glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
-
-			Gdx.graphics.getGL20().glEnable(GL20.GL_CULL_FACE);
-			Gdx.graphics.getGL20().glEnable(GL20.GL_DEPTH_TEST);
+			entity.update(0);
+			updateLight(Gdx.app.getGraphics().getDeltaTime());
+			
+			lightManager.calculateDepthMap(true);
+			
+			Gdx.gl.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+			Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
+			Gdx.gl.glEnable(GL20.GL_CULL_FACE);
+			Gdx.gl.glCullFace(GL20.GL_BACK);
+			
+			Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
+			Gdx.gl.glDepthFunc(GL20.GL_LESS);
+			Gdx.gl.glDepthMask(true);
+			
+			Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0);
+			
+			Gdx.gl.glDisable(GL30.GL_DITHER);
 
 			entity.update(Gdx.app.getGraphics().getDeltaTime());
 			entity.queueRenderables(cam, lightManager, Gdx.app.getGraphics().getDeltaTime(), batches);
 
-			((ModelBatchers) batches.get(ModelBatchers.class)).renderSolid(lightManager, cam);
-			((ModelBatchers) batches.get(ModelBatchers.class)).renderTransparent(lightManager, cam);
+			((ModelBatcher) batches.get(ModelBatcher.class)).renderSolid(lightManager, cam);
+			((ModelBatcher) batches.get(ModelBatcher.class)).renderTransparent(lightManager, cam);
 
 			if (Gdx.input.isKeyPressed(Keys.UP))
 			{
@@ -547,6 +618,16 @@ public class Main extends JFrame {
 			cam.position.set(tmp);
 
 			cam.update();
+			
+			Gdx.gl.glDisable(GL20.GL_CULL_FACE);			
+			Gdx.gl.glDisable(GL20.GL_DEPTH_TEST);
+			
+			batch.disableBlending();
+			batch.getProjectionMatrix().setToOrtho2D(0, 0, width, height);
+			batch.begin();
+		//	batch.draw(lightManager.depthTexture, 0, height-200, 200, height);
+		//	batch.draw(lightManager.depthTexture, 0, height, width, -height);
+			batch.end();
 		}
 		
 		public void left_right(float mag)
