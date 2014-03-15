@@ -28,6 +28,7 @@ import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
@@ -35,6 +36,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.UIManager;
 import javax.swing.event.UndoableEditEvent;
@@ -59,8 +61,10 @@ import com.Lyeeedar.Entities.Entity.MinimalPositionalData;
 import com.Lyeeedar.Graphics.Batchers.Batch;
 import com.Lyeeedar.Graphics.Batchers.ModelBatcher;
 import com.Lyeeedar.Graphics.Lights.LightManager;
+import com.Lyeeedar.Graphics.PostProcessing.PostProcessor;
+import com.Lyeeedar.Graphics.PostProcessing.PostProcessor.Effect;
 import com.Lyeeedar.Pirates.GLOBALS;
-import com.Lyeeedar.Pirates.ProceduralGeneration.LSystems.VolumePartitioner;
+import com.Lyeeedar.Pirates.ProceduralGeneration.VolumePartitioner;
 import com.Lyeeedar.Util.Controls;
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
@@ -70,6 +74,7 @@ import com.badlogic.gdx.backends.lwjgl.LwjglCanvas;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.GL30;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
+import com.badlogic.gdx.graphics.Pixmap.Format;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.MathUtils;
@@ -123,7 +128,7 @@ public class Main extends JFrame {
 
 	public void newGrammar()
 	{
-		textArea.setText("{Main:{X:10,Y:10,Z:10,Rule:Box}, Box:{Mesh: { Name:Box,Texture:data/textures/blank,TriplanarSample:false}}}");
+		textArea.setText("{Main:{X:10,Y:10,Z:10,Rule:BasicBox}, BasicBox:{Mesh: { Name:Box,Texture:data/textures/blank,TriplanarSample:false}}}");
 		textArea.setText(new Json().prettyPrint(textArea.getText(), 50));
 	}
 	
@@ -213,6 +218,10 @@ public class Main extends JFrame {
 		return true;
 	}
 	
+	
+	JTextField xsize = new JTextField(4);
+	JTextField ysize = new JTextField(4);
+	JTextField zsize = new JTextField(4);
 	public void right()
 	{
 		right.removeAll();
@@ -220,6 +229,13 @@ public class Main extends JFrame {
 		
 		JPanel buttonPanel = new JPanel();
 		right.add(buttonPanel, BorderLayout.NORTH);
+		
+		buttonPanel.add(new JLabel("X:"));
+		buttonPanel.add(xsize);
+		buttonPanel.add(new JLabel("Y:"));
+		buttonPanel.add(ysize);
+		buttonPanel.add(new JLabel("Z:"));
+		buttonPanel.add(zsize);
 
 		JButton button = new JButton("Refresh");
 		button.addActionListener(new ActionListener(){
@@ -255,6 +271,38 @@ public class Main extends JFrame {
 					}catch ( IOException eargh2){}
 				}
 
+				float x = 10;
+				float y = 10;
+				float z = 10;
+				
+				try { 
+					x = Float.parseFloat(xsize.getText());
+				}
+				catch (Exception e)
+				{
+					xsize.setText(""+10);
+				}
+				
+				try { 
+					y = Float.parseFloat(ysize.getText());
+				}
+				catch (Exception e)
+				{
+					ysize.setText(""+10);
+				}
+				
+				try { 
+					z = Float.parseFloat(zsize.getText());
+				}
+				catch (Exception e)
+				{
+					zsize.setText(""+10);
+				}
+				
+				renderer.xsize = x;
+				renderer.ysize = y;
+				renderer.zsize = z;
+				
 				renderer.reloadMesh("temp.json");
 
 
@@ -422,6 +470,7 @@ public class Main extends JFrame {
 
 		Entity entity;
 		LightManager lightManager;
+		PostProcessor postProcessor;
 
 		int width;
 		int height;
@@ -429,6 +478,10 @@ public class Main extends JFrame {
 		float dist = 50;
 		float Xangle = 0;
 		float Yangle = 0;
+		
+		float xsize = 10;
+		float ysize = 10;
+		float zsize = 10;
 		
 		Vector3 position = new Vector3();
 
@@ -462,6 +515,9 @@ public class Main extends JFrame {
 			
 			entry = GLOBALS.renderTree.createEntry(entity, new Vector3(), new Vector3(1, 1, 1), Octtree.MASK_RENDER | Octtree.MASK_SHADOW_CASTING);
 			GLOBALS.renderTree.add(entry);
+			
+			//postProcessor = new PostProcessor(Format.RGBA8888, GLOBALS.RESOLUTION[0], GLOBALS.RESOLUTION[1], null);
+			//postProcessor.addEffect(Effect.SSAO);
 		}
 
 		public void reloadMesh(String file)
@@ -470,8 +526,8 @@ public class Main extends JFrame {
 
 			VolumePartitioner vp = VolumePartitioner.load(file);
 			
-			vp.evaluate();
-			vp.collectMeshes(entity, entry, null);
+			vp.evaluate(xsize, ysize, zsize);
+			vp.collectMeshes(entity, entry, null, new Matrix4());
 			entry.updatePosition();
 			
 			entity.queueRenderables(cam, lightManager, Gdx.app.getGraphics().getDeltaTime(), batches);
@@ -498,43 +554,15 @@ public class Main extends JFrame {
 			tmp.set(cam.direction).scl(-1*dist);
 			cam.position.set(tmp);
 
-			cam.update();			
+			cam.update();		
+			
+			//postProcessor.updateBufferSettings(Format.RGBA8888, width, height);
 		}
 
 		boolean increase = true;
 		public void updateLight(float delta)
 		{			
-			delta /= 10;
-			
-			if (increase) 
-			{
-				GLOBALS.LIGHTS.directionalLight.direction.y += delta;
-				
-				if (GLOBALS.LIGHTS.directionalLight.direction.y < 0.0f) 
-				{
-					GLOBALS.LIGHTS.directionalLight.direction.z += delta;
-				}
-				else
-				{
-					GLOBALS.LIGHTS.directionalLight.direction.z -= delta;
-				}
-			}
-			else 
-			{
-				GLOBALS.LIGHTS.directionalLight.direction.y -= delta;
-				
-				if (GLOBALS.LIGHTS.directionalLight.direction.y < 0.0f) 
-				{
-					GLOBALS.LIGHTS.directionalLight.direction.z += delta;
-				}
-				else
-				{
-					GLOBALS.LIGHTS.directionalLight.direction.z -= delta;
-				}
-			}
-			
-			if (GLOBALS.LIGHTS.directionalLight.direction.y >= 1.0f) increase = false;
-			if (GLOBALS.LIGHTS.directionalLight.direction.y < -1) increase = true;
+			GLOBALS.LIGHTS.directionalLight.direction.set(0.5f, 0.5f, 0.0f);
 			
 			lightManager.sort(tmp.set(0, 0, 0));
 		}
@@ -546,9 +574,14 @@ public class Main extends JFrame {
 			entity.update(0);
 			updateLight(Gdx.app.getGraphics().getDeltaTime());
 			
-			lightManager.calculateDepthMap(true);
+			lightManager.calculateDepthMap(true, cam);
 			
-			Gdx.gl.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+			entity.update(Gdx.app.getGraphics().getDeltaTime());
+			entity.queueRenderables(cam, lightManager, Gdx.app.getGraphics().getDeltaTime(), batches);
+			
+			//postProcessor.begin();
+			
+			Gdx.gl.glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
 			Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
 			Gdx.gl.glEnable(GL20.GL_CULL_FACE);
 			Gdx.gl.glCullFace(GL20.GL_BACK);
@@ -558,14 +591,11 @@ public class Main extends JFrame {
 			Gdx.gl.glDepthMask(true);
 			
 			Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0);
-			
-			Gdx.gl.glDisable(GL30.GL_DITHER);
-
-			entity.update(Gdx.app.getGraphics().getDeltaTime());
-			entity.queueRenderables(cam, lightManager, Gdx.app.getGraphics().getDeltaTime(), batches);
 
 			((ModelBatcher) batches.get(ModelBatcher.class)).renderSolid(lightManager, cam);
 			((ModelBatcher) batches.get(ModelBatcher.class)).renderTransparent(lightManager, cam);
+
+			//postProcessor.end();
 
 			if (Gdx.input.isKeyPressed(Keys.UP))
 			{
@@ -618,16 +648,6 @@ public class Main extends JFrame {
 			cam.position.set(tmp);
 
 			cam.update();
-			
-			Gdx.gl.glDisable(GL20.GL_CULL_FACE);			
-			Gdx.gl.glDisable(GL20.GL_DEPTH_TEST);
-			
-			batch.disableBlending();
-			batch.getProjectionMatrix().setToOrtho2D(0, 0, width, height);
-			batch.begin();
-		//	batch.draw(lightManager.depthTexture, 0, height-200, 200, height);
-		//	batch.draw(lightManager.depthTexture, 0, height, width, -height);
-			batch.end();
 		}
 		
 		public void left_right(float mag)
