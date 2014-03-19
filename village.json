@@ -1,0 +1,28 @@
+{
+Imports: [
+	building.json
+],
+Main: {
+	X : 500,
+	Y : 20,
+	Z : 500,
+	Rule: house_placer	
+},
+house_placer: {
+	Repeat: {
+		Axis : X,
+		Size : "40+rnd(40)",
+		Repeats : -1,
+		Rule : {
+			Repeat : {
+				Axis : Z,
+				Size : "40+rnd(40)",
+				Repeats : -1,
+				Rule : building,
+				RemainderRule : empty
+			}
+		},
+		RemainderRule : empty
+	}
+}
+}

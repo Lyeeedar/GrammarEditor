@@ -58,14 +58,23 @@ import com.Lyeeedar.Collision.Octtree;
 import com.Lyeeedar.Collision.Octtree.OcttreeEntry;
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.MinimalPositionalData;
+import com.Lyeeedar.Graphics.Clouds;
+import com.Lyeeedar.Graphics.Sea;
+import com.Lyeeedar.Graphics.SkyBox;
+import com.Lyeeedar.Graphics.Weather;
 import com.Lyeeedar.Graphics.Batchers.Batch;
 import com.Lyeeedar.Graphics.Batchers.ModelBatcher;
+import com.Lyeeedar.Graphics.Lights.DirectionalLight;
 import com.Lyeeedar.Graphics.Lights.LightManager;
 import com.Lyeeedar.Graphics.PostProcessing.PostProcessor;
 import com.Lyeeedar.Graphics.PostProcessing.PostProcessor.Effect;
+import com.Lyeeedar.Graphics.Queueables.Queueable.RenderType;
+import com.Lyeeedar.Graphics.Renderers.DeferredRenderer;
+import com.Lyeeedar.Graphics.Renderers.ForwardRenderer;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Pirates.ProceduralGeneration.VolumePartitioner;
 import com.Lyeeedar.Util.Controls;
+import com.Lyeeedar.Util.FollowCam;
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
@@ -74,7 +83,9 @@ import com.badlogic.gdx.backends.lwjgl.LwjglCanvas;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.GL30;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Pixmap.Format;
+import com.badlogic.gdx.graphics.Texture.TextureWrap;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.MathUtils;
@@ -466,11 +477,11 @@ public class Main extends JFrame {
 
 		BitmapFont font;
 		SpriteBatch batch;
-		PerspectiveCamera cam;
+		FollowCam cam;
 
 		Entity entity;
 		LightManager lightManager;
-		PostProcessor postProcessor;
+		com.Lyeeedar.Graphics.Renderers.Renderer renderer;
 
 		int width;
 		int height;
@@ -494,30 +505,32 @@ public class Main extends JFrame {
 
 			controls = new Controls(false);
 			Gdx.input.setInputProcessor(controls.ip);
+			
+			cam = new FollowCam(controls, null, -1);
 
 			font = new BitmapFont();
 			batch = new SpriteBatch();
 
 			lightManager = new LightManager();
 			lightManager.ambientColour.set(0.3f, 0.3f, 0.3f);
-			lightManager.directionalLight.direction.set(-0.5f, 1, 1).nor();
-			lightManager.directionalLight.colour.set(1.0f, 1.0f, 1.0f);
-			lightManager.sort(new Vector3());
-			lightManager.enableShadowMapping();
-			
 			GLOBALS.LIGHTS = lightManager;
+			
+			Texture seatex = new Texture(Gdx.files.internal("data/textures/water.png"));
+			seatex.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
+			Weather weather = new Weather(new Vector3(0.4f, 0.6f, 0.6f), new Vector3(-0.3f, -0.3f, 0), new Vector3(0.05f, 0.03f, 0.08f), new Vector3(-0.05f, 0.03f, 0.08f), new Clouds());
+			weather.update(1, cam);
+			SkyBox skybox = new SkyBox(null, weather);
+			lightManager.addLight(weather.sun);
+			GLOBALS.SKYBOX = skybox;
 
 			entity = new Entity(false, new MinimalPositionalData());
-			
-			batches.put(ModelBatcher.class, new ModelBatcher(false));
-			
+						
 			GLOBALS.renderTree = new Octtree<Entity>();
 			
 			entry = GLOBALS.renderTree.createEntry(entity, new Vector3(), new Vector3(1, 1, 1), Octtree.MASK_RENDER | Octtree.MASK_SHADOW_CASTING);
 			GLOBALS.renderTree.add(entry);
 			
-			//postProcessor = new PostProcessor(Format.RGBA8888, GLOBALS.RESOLUTION[0], GLOBALS.RESOLUTION[1], null);
-			//postProcessor.addEffect(Effect.SSAO);
+			renderer = new ForwardRenderer(cam);
 		}
 
 		public void reloadMesh(String file)
@@ -530,18 +543,20 @@ public class Main extends JFrame {
 			vp.collectMeshes(entity, entry, null, new Matrix4());
 			entry.updatePosition();
 			
-			entity.queueRenderables(cam, lightManager, Gdx.app.getGraphics().getDeltaTime(), batches);
-			((ModelBatcher) batches.get(ModelBatcher.class)).clear();
+			entity.queueRenderables(cam, lightManager, Gdx.app.getGraphics().getDeltaTime(), renderer.getBatches());
+			((ModelBatcher) renderer.getBatches().get(ModelBatcher.class)).clear();
 		}
 
 		@Override
 		public void resize(int width, int height) {
 			this.width = width;
 			this.height = height;
-
-			cam = new PerspectiveCamera(75, width, height);
-			cam.near = 1.0f;
-			cam.far = 5000f;
+			
+			cam.viewportWidth = width;
+	        cam.viewportHeight = height;
+	        cam.near = 1f;
+	        cam.far = 5000f ;
+	        cam.update();
 
 			cam.direction.set(GLOBALS.DEFAULT_ROTATION);
 			cam.direction.rotate(Xangle, 0, 1, 0);
@@ -554,48 +569,25 @@ public class Main extends JFrame {
 			tmp.set(cam.direction).scl(-1*dist);
 			cam.position.set(tmp);
 
-			cam.update();		
-			
-			//postProcessor.updateBufferSettings(Format.RGBA8888, width, height);
+			cam.update();					
 		}
 
 		boolean increase = true;
 		public void updateLight(float delta)
-		{			
-			GLOBALS.LIGHTS.directionalLight.direction.set(0.5f, 0.5f, 0.0f);
-			
-			lightManager.sort(tmp.set(0, 0, 0));
+		{						
+			lightManager.sort(cam.renderFrustum, cam, RenderType.FORWARD);
 		}
 		
-		HashMap<Class, Batch> batches = new HashMap<Class, Batch>();
 		@Override
 		public void render() {
 
 			entity.update(0);
 			updateLight(Gdx.app.getGraphics().getDeltaTime());
-			
-			lightManager.calculateDepthMap(true, cam);
-			
+						
 			entity.update(Gdx.app.getGraphics().getDeltaTime());
-			entity.queueRenderables(cam, lightManager, Gdx.app.getGraphics().getDeltaTime(), batches);
+			entity.queueRenderables(cam, lightManager, Gdx.app.getGraphics().getDeltaTime(), renderer.getBatches());
 			
-			//postProcessor.begin();
-			
-			Gdx.gl.glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
-			Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
-			Gdx.gl.glEnable(GL20.GL_CULL_FACE);
-			Gdx.gl.glCullFace(GL20.GL_BACK);
-			
-			Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
-			Gdx.gl.glDepthFunc(GL20.GL_LESS);
-			Gdx.gl.glDepthMask(true);
-			
-			Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0);
-
-			((ModelBatcher) batches.get(ModelBatcher.class)).renderSolid(lightManager, cam);
-			((ModelBatcher) batches.get(ModelBatcher.class)).renderTransparent(lightManager, cam);
-
-			//postProcessor.end();
+			renderer.render();
 
 			if (Gdx.input.isKeyPressed(Keys.UP))
 			{

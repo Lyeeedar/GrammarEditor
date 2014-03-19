@@ -1,0 +1,229 @@
+{
+
+Imports : [
+	romanesque_church_pews.json,
+	steps.json
+],
+
+Main: { 
+	X: 80, 
+	Y: 60, 
+	Z: 100, 
+	Rule: PlaceWallsY
+},
+
+PlaceWallsY : {
+	Divide : {
+		Axis : Y,
+		Sizes : [
+			1, "(100%)-10", 9
+		],
+		Rules : [
+			Floor, PlaceWallsX, Roof
+		]
+	}
+},
+
+PlaceWallsX : {
+	Divide : {
+		Axis : X,
+		Sizes : [
+			1, "(100%)-2", 1
+		],
+		Rules : [
+			Wall, PlaceWallsZ, Wall
+		]
+	}	
+},
+
+PlaceWallsZ : {
+	Divide : {
+		Axis : Z,
+		Sizes : [
+			1, "(100%)-2", 1
+		],
+		Rules : [
+			EntranceY, SeperateBuilding, Wall
+		]
+	}	
+},
+
+Floor : {
+	Rule: BasicBox
+},
+Roof : {
+	CoordinateSystem : "x90yz",
+	Mesh : {
+		Name : Prism,
+		Texture : data/textures/blank,
+		Loft : "100%",
+		TriplanarSample : false
+	}
+},
+Wall : {
+	Rule: BasicBox
+},
+EntranceY : {
+	Divide : {
+		Axis : Y,
+		Sizes : [
+			"40%", "60%"
+		],
+		Rules : [
+			EntranceX, Wall
+		]
+	}
+},
+
+EntranceX : {
+	Divide : {
+		Axis : X,
+		Sizes : [
+			"40%", "20%", "40%"
+		],
+		Rules : [
+			Wall, EntranceArch, Wall
+		]
+	}	
+},
+
+EntranceArch : {
+	CoordinateSystem : "x90yz",
+	Mesh : {
+		Name : data/models/arch.obj,
+		Texture : data/textures/blank,
+		TriplanarSample : false
+	}
+},
+
+SeperateBuilding : {
+	Divide : {
+		Axis : Z,
+		Sizes : [
+			"80%", "20%"
+		],
+		Rules : [
+			Nave, End
+		]
+	}
+},
+
+Nave : {
+	Divide : {
+		Axis : X,
+		Sizes : [
+			"10%", "80%", "10%"
+		],
+		Rules : [
+			NaveSide, NaveCenter, NaveSide
+		]	
+	},
+},
+
+NaveSide : {
+	Rule : NaveStairs
+},
+
+NaveStairs : {
+	Snap : {
+		X : 0,
+		Y : "-1",
+		Z : 1
+	},
+	Y : "Y-(Y/4)",
+	Define : {
+		StepHeight : 1,
+		StepDepth : 1.5,
+		StepTexture : data/textures/blank
+	},
+	Rule : steps.StepsCalculated
+},
+
+NaveCenter : {
+	Rule : romanesque_church_pews.CreatePews
+},
+
+End : {
+	Divide : {
+		Axis : Y,
+		Sizes : [
+			"Y-(Y/4)", "Y/4"
+		],
+		Rules : [
+			EndBottom,
+			EndTop
+		]
+	}
+},
+
+EndTop : {
+	Divide : {
+		Axis : Y,
+		Sizes : [
+			0.5, "(100%)-0.5"
+		],
+		Rules : [
+			BasicBox, EndTopTop
+		]
+	}
+},
+
+EndTopTop : {
+	Divide : {
+		Axis : X,
+		Sizes : [
+			"25%", "50%", "25%"
+		],
+		Rules : [
+			EndTopTopSide, EndTopTopMiddle, EndTopTopSide
+		]
+	}
+},
+
+EndTopTopSide : {
+	
+},
+
+EndTopTopMiddle : {
+	Snap : {
+		X : 0,
+		Y : 0,
+		Z : -1	
+	},
+	Z : 1,
+	CoordinateSystem : "x90yz",
+	Define : {
+		VaultSize : 10
+	},
+	Rule : vaults.PlaceArches
+},
+
+EndBottom : {
+	Divide : {
+		Axis : X,
+		Sizes : [
+			"25%", "50%", "25%"
+		],
+		Rules : [
+			BasicBox, Altar, BasicBox
+		]
+	} 
+},
+
+Altar : {
+	CoordinateSystem : "x90yz",
+	Mesh : {
+		Name : data/models/arch.obj,
+		Texture : data/textures/blank,
+		TriplanarSample : false
+	}
+},
+
+BasicBox: {
+	Mesh: {
+		Name: Box,
+		Texture: data/textures/blank,
+		TriplanarSample: false
+	}
+}
+}

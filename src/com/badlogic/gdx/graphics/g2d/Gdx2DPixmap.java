@@ -196,7 +196,7 @@ public class Gdx2DPixmap implements Disposable {
 		case GDX2D_FORMAT_RGBA4444:
 			return GL30.GL_RGBA;
 		case GDX2D_FORMAT_DEPTH:
-			return GL30.GL_DEPTH_COMPONENT32F;
+			return GL20.GL_DEPTH_COMPONENT;
 		default:
 			throw new GdxRuntimeException("unknown format: " + format);
 		}
@@ -205,7 +205,7 @@ public class Gdx2DPixmap implements Disposable {
 	public int getGLFormat () {
 		switch (format) {
 		case GDX2D_FORMAT_DEPTH:
-			return GL30.GL_DEPTH_COMPONENT;
+			return GL20.GL_DEPTH_COMPONENT;
 		default:
 			return getGLInternalFormat();
 		}
@@ -223,7 +223,7 @@ public class Gdx2DPixmap implements Disposable {
 		case GDX2D_FORMAT_RGBA4444:
 			return GL30.GL_UNSIGNED_SHORT_4_4_4_4;
 		case GDX2D_FORMAT_DEPTH:
-			return GL30.GL_UNSIGNED_INT;
+			return GL20.GL_UNSIGNED_INT;
 		default:
 			throw new GdxRuntimeException("unknown format: " + format);
 		}

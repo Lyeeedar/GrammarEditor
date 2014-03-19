@@ -1,0 +1,234 @@
+{
+Main: {
+	X: 50,
+	Y: 50,
+	Z: 200,
+	Rule: CreateBuilding
+},
+CreateBuilding: {
+	Define: {
+		VaultSize: "(X/3)*2",
+		PillarSize: X/7
+	},
+	Divide: {
+		Axis: X,
+		Sizes: [
+			"95%",
+			"5%"
+		],
+		Rules: [
+			SeperateHall,
+			PlaceArches
+		]
+	}
+},
+PlaceArches: {
+	CoordinateSystem: "xyz",
+	Repeat: {
+		Axis: Z,
+		Offset: VaultSize/2,
+		Size: VaultSize,
+		Rule: ArchMesh,
+		RemainderRule: HalfArchMesh,
+		OffsetRule : HalfArchMesh,
+		OffsetCoord : "x180yz"
+	}
+},
+SeperateHall: {
+	Divide: {
+		Axis: X,
+		Sizes: [
+			"33%",
+			"34%",
+			"33%"
+		],
+		Rules: [
+			PlaceHalfVaults,
+			PlacePillars,
+			PlaceHalfPillars
+		]
+	}
+},
+PlaceHalfPillars: {
+	Repeat: {
+		Axis: Z,
+		Size: VaultSize,
+		Repeats: -1,
+		Rule: HalfPillar,
+		RemainderRule: empty
+	}
+},
+HalfPillar: {
+	CoordinateSystem: "x180yz",
+	Divide: {
+		Axis: Y,
+		Sizes: [
+			"10%",
+			"60%",
+			"30%"
+		],
+		Rules: [
+			HalfPillarLedge,
+			HalfPillarMesh,
+			HalfVaultMesh
+		]
+	}
+},
+PlaceHalfVaults: {
+	Repeat: {
+		Axis: Z,
+		Size: VaultSize,
+		Repeats: -1,
+		Rule: HalfVault,
+		RemainderRule: empty
+	}
+},
+HalfVault: {
+	Divide: {
+		Axis: Y,
+		Sizes: [
+			"70%",
+			"30%"
+		],
+		Rules: [
+			empty,
+			HalfVaultMesh
+		]
+	}
+},
+PlacePillars: {
+	Repeat: {
+		Axis: Z,
+		Size: VaultSize,
+		Repeats: -1,
+		Rule: Pillar,
+		RemainderRule: empty
+	}
+},
+Pillar: {
+	Divide: {
+		Axis: Y,
+		Sizes: [
+			"70%",
+			"30%"
+		],
+		Rules: [
+			PillarMesh,
+			VaultMesh
+		]
+	}
+},
+PillarMesh: {
+	X: PillarSize,
+	Z: PillarSize,
+	Mesh: {
+		Name: data/models/romanesque_pillar_01.obj,
+		Texture: data/textures/stone/stone12,
+		TriplanarSample: true,
+		TriplanarScale: 8
+	}
+},
+HalfPillarMesh: {
+	Snap: {
+		X: -1,
+		Y: 0,
+		Z: 0
+	},
+	X: PillarSize/2,
+	Z: PillarSize,
+	Mesh: {
+		Name: data/models/romanesque_pillar_02.obj,
+		Texture: data/textures/stone/stone12,
+		TriplanarSample: true,
+		TriplanarScale: 8
+	}
+},
+HalfPillarLedge: {
+	Snap: {
+		X: -1,
+		Y: 0,
+		Z: 0
+	},
+	X: PillarSize,
+	Mesh: {
+		Name: Box,
+		Texture: data/textures/stone/stone07,
+		TriplanarSample: true,
+		TriplanarScale: 20
+	}
+},
+HalfVaultMesh: {
+	X: VaultSize/2,
+	Z: VaultSize,
+	Mesh: {
+		Name: data/models/romanesque_vault_02.obj,
+		Texture: data/textures/stone/stone07,
+		TriplanarSample: true,
+		TriplanarScale: 20
+	}
+},
+VaultMesh: {
+	X: VaultSize,
+	Z: VaultSize,
+	Mesh: {
+		Name: data/models/romanesque_vault_01.obj,
+		Texture: data/textures/stone/stone07,
+		TriplanarSample: true,
+		TriplanarScale: 20
+	}
+},
+Wall: {
+	Divide: {
+		Axis: Y,
+		Sizes: [
+			"75%",
+			"25%"
+		],
+		Rules: [
+			WallBottom,
+			WallTop
+		]
+	}
+},
+WallTop: {
+	Mesh: {
+		Name: Box,
+		Texture: data/textures/stone/stone07,
+		TriplanarSample: true,
+		TriplanarScale: 20
+	}
+},
+WallBottom: {
+	Mesh: {
+		Name: Box,
+		Texture: data/textures/stone/stone08,
+		TriplanarSample: true,
+		TriplanarScale: 20
+	}
+},
+Floor: {
+	Mesh: {
+		Name: Box,
+		Texture: data/textures/stone/stone11,
+		TriplanarSample: true,
+		TriplanarScale: 20
+	}
+},
+ArchMesh: {
+	Mesh: {
+		Name: data/models/romanesque_door_01.obj,
+		Texture: data/textures/stone/stone07,
+		TriplanarSample: true,
+		TriplanarScale: 20
+	}
+},
+HalfArchMesh: {
+	Mesh: {
+		Name: data/models/romanesque_door_02.obj,
+		Texture: data/textures/stone/stone07,
+		TriplanarSample: true,
+		TriplanarScale: 20
+	}
+},
+empty: {}
+}

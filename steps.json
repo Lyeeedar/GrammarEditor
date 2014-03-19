@@ -1,0 +1,53 @@
+{
+Main: {
+	X: 10,
+	Y: 10,
+	Z: 10,
+	Define: {
+		StepHeight: 1,
+		StepDepth : 1,
+		StepTexture : data/textures/blank
+	},
+	Rule: Steps
+},
+StepsCalculated : {
+	Z : "(Y/StepHeight)*StepDepth",
+	Rule : Steps
+},
+Steps: {
+	Define : {
+		StepNum : 1
+	},
+	Repeat : {
+		Axis : Z,
+		Size : StepDepth,
+		Repeats : -1,
+		Rule  : Step,
+		RemainderRule : StepShape,
+		RepeatRule : {
+			Define : {
+				StepNum : StepNum+1
+			},
+		}
+	}
+},
+Step : {
+	Divide : {
+		Axis : Y,
+		Sizes : [
+			"(StepNum-2)*StepHeight", "StepHeight*2", "(100%)-StepNum*StepHeight"
+		],
+		Rules : [
+			empty, StepShape, empty
+		]
+	}
+},
+StepShape : {
+	Mesh : {
+		Name : Box,
+		Texture : StepTexture,
+		TriplanarSample : false
+	}
+},
+empty : {}
+}

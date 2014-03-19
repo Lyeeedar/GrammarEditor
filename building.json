@@ -1,0 +1,170 @@
+{
+Imports: [
+	bricks.json,
+	steps.json
+],
+Main: {
+	Rule: building
+},
+building: {
+	X: 20,
+	Y: 15,
+	Z: 10,
+	Define: {
+		BrickX: 1,
+		BrickY: 1,
+		BrickZ: 1,
+		brickMesh: box,
+		brickTexture: data/textures/rock,
+		backingWallMesh: Box,
+		backingWallTexture: data/textures/blank
+	},
+	Rule: floor_seperator
+},
+floor_seperator: {
+	Divide: {
+		Axis: Y,
+		Sizes: [
+			"60%",
+			"40%"
+		],
+		Rules: [
+			wall_dispatcher,
+			roof_seperator
+		]
+	}
+},
+roof_seperator: {
+	Divide: {
+		Axis: Y,
+		Sizes: [
+			"10%",
+			"90%"
+		],
+		Rules: [
+			roof_base,
+			roof_prism
+		]
+	}
+},
+roof_base: {
+	X: "(100%)+0.5",
+	Z: "(100%)+0.5",
+	Mesh: {
+		Name: Box,
+		Texture: data/textures/blank,
+		TriplanarSample : true,
+		TriplanarScale : 10
+	}
+},
+roof_prism: {
+	CoordinateSystem: {
+		X: X,
+		Y: Y,
+		Z: Z
+	},
+	Mesh: {
+		Name: Prism,
+		Texture: data/textures/rock,
+		Loft: "60%",
+		TriplanarSample: true,
+		TriplanarScale : 10
+	}
+},
+window_wall: {
+	Divide: {
+		Axis: Y,
+		Sizes: [
+			"15%",
+			"70%",
+			"15%"
+		],
+		Rules: [
+			wall,
+			Door,
+			wall
+		]
+	}
+},
+windowedWall: {
+	Define: {
+		wall_width: "(X-3)/2"
+	},
+	Divide: {
+		Axis: X,
+		Sizes: [
+			wall_width,
+			"3",
+			wall_width
+		],
+		Rules: [
+			wall,
+			window_wall,
+			wall
+		]
+	}
+},
+wall_dispatcher: {
+	Select: {
+		Sides: [
+			Left,
+			Right,
+			Back
+		],
+		Coords: [
+			zyx,
+			zy-x,
+			xy-z
+		],
+		Size: 1,
+		Rule: windowedWall
+	},
+	Select: {
+		Sides: [
+			Bottom
+		],
+		Coords: [
+			xz-y
+		],
+		Size: 1,
+		Rule: wall
+	},
+	Select: {
+		Sides: [
+			Front
+		],
+		Coords: [
+			xyz
+		],
+		Size: 1,
+		Rule: {
+			Divide: {
+				Axis: X,
+				Sizes: [
+					"60%",
+					3,
+					"(40%)-3"
+				],
+				Rules: [
+					windowedWall,
+					Door,
+					wall
+				]
+			}
+		}
+	}
+},
+Door : {
+	CoordinateSystem:
+	{
+		X : Z,
+		Y : Y,
+		Z : X
+	},
+	Mesh : {
+		Name : data/models/romanesque_door_01.obj,
+		Texture : data/textures/rock,
+		TriplanarSample : false
+	}
+}
+}

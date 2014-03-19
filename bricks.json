@@ -1,0 +1,64 @@
+{
+Main: {
+	X: 10,
+	Y: 10,
+	Z: 1,
+	Define: {
+		BrickX: 1,
+		BrickY: 1,
+		BrickZ: 1,
+		brickMesh: box,
+		brickTexture: data/textures/rock,
+		backingWallMesh: Box,
+		backingWallTexture: data/textures/blank
+	},
+	Rule: wall
+},
+brick: {
+	X: "98%",
+	Y: "98%",
+	Z: "(90%)+rnd(20%)",
+	Mesh: {
+		Name: brickMesh,
+		Texture: brickTexture,
+		TriplanarSample: true,
+		TriplanarScale: 10
+	}
+},
+backing_wall: {
+	Mesh: {
+		Name: backingWallMesh,
+		Texture: backingWallTexture,
+		TriplanarSample: true,
+		TriplanarScale: 10
+	}
+},
+empty: {},
+wall_x: {
+	Z: "(100%)+rnd(0.5)",
+	Repeat: {
+		Axis: X,
+		Size: BrickX+rnd(BrickX),
+		Repeats: -1,
+		Rule: brick,
+		RemainderRule: brick
+	}
+},
+wall: {
+	Repeat: {
+		Axis: Z,
+		Size: "70%",
+		Repeats: 1,
+		Rule: {
+			Repeat: {
+				Axis: Y,
+				Size: BrickY,
+				Repeats: -1,
+				Rule: wall_x,
+				RemainderRule: wall_x
+			}
+		},
+		RemainderRule: backing_wall
+	}
+}
+}

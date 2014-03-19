@@ -10,24 +10,6 @@ CreateBuilding: {
 		VaultSize: "(X/3)*2",
 		PillarSize: X/7
 	},
-	Select: {
-		Sides: [
-			Left,
-			Back,
-			Bottom
-		],
-		Coords: [
-			xyz,
-			xyz,
-			xyz
-		],
-		Rules: [
-			Wall,
-			Wall,
-			Floor
-		],
-		Sizes: [ 1, 1, 1, 1 ]
-	},
 	Divide: {
 		Axis: X,
 		Sizes: [
@@ -41,13 +23,15 @@ CreateBuilding: {
 	}
 },
 PlaceArches: {
-	CoordinateSystem: xy-z,
+	CoordinateSystem: "xyz",
 	Repeat: {
 		Axis: Z,
 		Offset: VaultSize/2,
 		Size: VaultSize,
 		Rule: ArchMesh,
-		RemainderRule: HalfArchMesh
+		RemainderRule: HalfArchMesh,
+		OffsetRule : HalfArchMesh,
+		OffsetCoord : "x180yz"
 	}
 },
 SeperateHall: {
@@ -75,7 +59,7 @@ PlaceHalfPillars: {
 	}
 },
 HalfPillar: {
-	CoordinateSystem: xy-z,
+	CoordinateSystem: "x180yz",
 	Divide: {
 		Axis: Y,
 		Sizes: [
@@ -146,7 +130,7 @@ PillarMesh: {
 },
 HalfPillarMesh: {
 	Snap: {
-		X: 1,
+		X: -1,
 		Y: 0,
 		Z: 0
 	},
@@ -161,7 +145,7 @@ HalfPillarMesh: {
 },
 HalfPillarLedge: {
 	Snap: {
-		X: 1,
+		X: -1,
 		Y: 0,
 		Z: 0
 	},

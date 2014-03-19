@@ -1,0 +1,135 @@
+{
+
+Imports : [
+	vaults.json	
+],
+
+Main: { 
+	X: 50, 
+	Y: 50, 
+	Z: 50,
+	Rule : CreatePews
+},
+
+CreatePews : {
+	Define : {
+		PillarSpacing : 10,
+		PillarTopHeight : "(Y/4)",
+		PillarSize : 5,
+		PillarModel : data/models/romanesque_pillar_01.obj,
+		PillarTexture : data/textures/stone/stone01,
+		
+		PewSpacing : 10,
+		PewDepth : 3,
+		PewHeight : 3
+	},
+	Rule: seperateHall 
+},
+
+seperateHall : {
+	Divide : {
+		Axis : X,
+		Sizes : [
+			"20%", "60%", "20%"
+		],
+		Rules : [
+			Side, Center, Side
+		],
+		Coords : [
+			xyz, xyz, "x180yz"
+		]
+	}	
+},
+
+Side : {
+	Divide : {
+		Axis : Y,
+		Sizes : [
+			"(100%)-PillarTopHeight", PillarTopHeight
+		],
+		Rules : [
+			Pillars, PillarTop
+		]
+	}
+},
+
+Pillars : {
+	Repeat : {
+		Axis : Z,
+		Size : PillarSpacing,
+		Repeat : -1,
+		Rule : Pillar
+	}
+},
+
+PillarTop : {
+	Divide : {
+		Axis : Y,
+		Sizes : [
+			0.5, "(100%)-0.5"
+		],
+		Rules : [
+			BasicBox, vaults.CreateBuilding
+		]
+	}
+},
+
+Pillar : {
+	X : PillarSize,
+	Z : PillarSize,
+	Mesh : {
+		Name : PillarModel,
+		Texture : PillarTexture,
+		TriplanarSample: true,
+		TriplanarScale : 10
+	}	
+},
+
+Center : {
+	Divide : {
+		Axis : X,
+		Sizes : [
+			"33%", "34%", "33%"
+		],
+		Rules : [
+			Pews, Nave, Pews
+		]
+	}	
+},
+
+Pews :{
+	Repeat : {
+		Axis : Z,
+		Size : PewSpacing,
+		Rule : Pew,
+		Repeat : -1
+	}
+},
+
+Pew : {
+	Snap : {
+		X : 0,
+		Y : -1,
+		Z : 0	
+	},
+	Z : PewDepth,
+	Y : PewHeight,
+	Mesh : {
+		Name : Box,
+		Texture : data/textures/blank,
+		TriplanarSample : false
+	}
+},
+
+Nave : {
+	
+},
+
+BasicBox: {
+	Mesh: {
+		Name: Box,
+		Texture: data/textures/blank,
+		TriplanarSample: false
+	}
+}
+}

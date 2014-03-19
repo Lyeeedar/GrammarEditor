@@ -1,0 +1,46 @@
+{
+Main: { X: 10, Y: 10, Z: 10, Rule: Vsplit },
+Vsplit : {
+	Divide : {
+		Axis : Y,
+		Sizes : ["50%", "50%"],
+		Rules : [Base, Top] 
+	},
+	Select : {
+		Sides : [Front],
+		Rules : [Side],
+		Sizes : [1],
+		Coords : [xyz]
+	}
+},
+Side : {
+	Snap : {
+		X : 0,
+		Y : -1,
+		Z : -1	
+	},
+	X : "10%",
+	Y : "20%",
+	Z : "300%",
+	Mesh: {
+		Name: Box,
+		Texture: data/textures/stone/stone02,
+		TriplanarSample: false
+	}
+},
+Base: {
+	Mesh: {
+		Name: Box,
+		Texture: data/textures/stone/stone02,
+		TriplanarSample: false
+	}
+},
+Top : {
+	Mesh : {
+		Name : Prism,
+		Texture : data/textures/stone/stone01,
+		Loft : "60%",
+		TriplanarSample: false
+	}
+}
+}

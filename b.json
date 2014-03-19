@@ -1,0 +1,30 @@
+{
+Imports: [
+	bricks.json
+],
+Main: {
+	X: 10,
+	Y: 10,
+	Z: 10,
+	Define: {
+		BrickX: 1,
+		BrickY: 1,
+		BrickZ: 1
+	},
+	Rule: wall_dispatcher
+},
+wall_dispatcher: {
+	Divide: {
+		Axis: Z,
+		Repeats: 1,
+		Size: 1,
+		Rule: {
+			CoordinateSystem: xyz,
+			Rule: wall_divider
+		},
+		RemainderRule: {
+			Rule: empty
+		}
+	}
+}
+}
