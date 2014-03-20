@@ -18,7 +18,6 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.HashMap;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -59,15 +58,10 @@ import com.Lyeeedar.Collision.Octtree.OcttreeEntry;
 import com.Lyeeedar.Entities.Entity;
 import com.Lyeeedar.Entities.Entity.MinimalPositionalData;
 import com.Lyeeedar.Graphics.Clouds;
-import com.Lyeeedar.Graphics.Sea;
 import com.Lyeeedar.Graphics.SkyBox;
 import com.Lyeeedar.Graphics.Weather;
-import com.Lyeeedar.Graphics.Batchers.Batch;
 import com.Lyeeedar.Graphics.Batchers.ModelBatcher;
-import com.Lyeeedar.Graphics.Lights.DirectionalLight;
 import com.Lyeeedar.Graphics.Lights.LightManager;
-import com.Lyeeedar.Graphics.PostProcessing.PostProcessor;
-import com.Lyeeedar.Graphics.PostProcessing.PostProcessor.Effect;
 import com.Lyeeedar.Graphics.Queueables.Queueable.RenderType;
 import com.Lyeeedar.Graphics.Renderers.DeferredRenderer;
 import com.Lyeeedar.Graphics.Renderers.ForwardRenderer;
@@ -80,14 +74,12 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration;
 import com.badlogic.gdx.backends.lwjgl.LwjglCanvas;
-import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.GL30;
-import com.badlogic.gdx.graphics.PerspectiveCamera;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Pixmap.Format;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Texture.TextureWrap;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
@@ -483,8 +475,8 @@ public class Main extends JFrame {
 		LightManager lightManager;
 		com.Lyeeedar.Graphics.Renderers.Renderer renderer;
 
-		int width;
-		int height;
+		int width = 600;
+		int height = 400;
 
 		float dist = 50;
 		float Xangle = 0;
@@ -507,6 +499,11 @@ public class Main extends JFrame {
 			Gdx.input.setInputProcessor(controls.ip);
 			
 			cam = new FollowCam(controls, null, -1);
+			cam.viewportWidth = width;
+	        cam.viewportHeight = height;
+	        cam.near = 1f;
+	        cam.far = 5000f ;
+			cam.update();
 
 			font = new BitmapFont();
 			batch = new SpriteBatch();
@@ -530,7 +527,8 @@ public class Main extends JFrame {
 			entry = GLOBALS.renderTree.createEntry(entity, new Vector3(), new Vector3(1, 1, 1), Octtree.MASK_RENDER | Octtree.MASK_SHADOW_CASTING);
 			GLOBALS.renderTree.add(entry);
 			
-			renderer = new ForwardRenderer(cam);
+			renderer = new DeferredRenderer(cam);
+			
 		}
 
 		public void reloadMesh(String file)
@@ -569,13 +567,18 @@ public class Main extends JFrame {
 			tmp.set(cam.direction).scl(-1*dist);
 			cam.position.set(tmp);
 
-			cam.update();					
+			cam.update();	
+			
+			renderer.resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+			
+			batch.getProjectionMatrix().setToOrtho2D(0, 0, width, height);
 		}
 
 		boolean increase = true;
 		public void updateLight(float delta)
 		{						
-			lightManager.sort(cam.renderFrustum, cam, RenderType.FORWARD);
+			RenderType renderType = renderer instanceof ForwardRenderer ? RenderType.FORWARD : RenderType.DEFERRED;
+			lightManager.sort(cam.renderFrustum, cam, renderType);
 		}
 		
 		@Override
@@ -586,9 +589,9 @@ public class Main extends JFrame {
 						
 			entity.update(Gdx.app.getGraphics().getDeltaTime());
 			entity.queueRenderables(cam, lightManager, Gdx.app.getGraphics().getDeltaTime(), renderer.getBatches());
-			
+					
 			renderer.render();
-
+			
 			if (Gdx.input.isKeyPressed(Keys.UP))
 			{
 				forward_backward(Gdx.graphics.getDeltaTime()*50);
