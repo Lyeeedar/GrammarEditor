@@ -62,20 +62,27 @@ import com.Lyeeedar.Graphics.SkyBox;
 import com.Lyeeedar.Graphics.Weather;
 import com.Lyeeedar.Graphics.Batchers.ModelBatcher;
 import com.Lyeeedar.Graphics.Lights.LightManager;
+import com.Lyeeedar.Graphics.Queueables.ModelBatchInstance;
+import com.Lyeeedar.Graphics.Queueables.ModelBatchInstance.ModelBatchData;
 import com.Lyeeedar.Graphics.Queueables.Queueable.RenderType;
 import com.Lyeeedar.Graphics.Renderers.DeferredRenderer;
 import com.Lyeeedar.Graphics.Renderers.ForwardRenderer;
 import com.Lyeeedar.Pirates.GLOBALS;
 import com.Lyeeedar.Pirates.ProceduralGeneration.VolumePartitioner;
 import com.Lyeeedar.Util.Controls;
+import com.Lyeeedar.Util.FileUtils;
 import com.Lyeeedar.Util.FollowCam;
+import com.Lyeeedar.Util.Shapes;
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration;
 import com.badlogic.gdx.backends.lwjgl.LwjglCanvas;
+import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.Pixmap.Format;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.Texture.TextureWrap;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -131,7 +138,7 @@ public class Main extends JFrame {
 
 	public void newGrammar()
 	{
-		textArea.setText("{Main:{X:10,Y:10,Z:10,Rule:BasicBox}, BasicBox:{Mesh: { Name:Box,Texture:data/textures/blank,TriplanarSample:false}}}");
+		textArea.setText("{Main:{Rule:BasicBox}, BasicBox:{Mesh: { Name:Box,Texture:data/textures/blank}}}");
 		textArea.setText(new Json().prettyPrint(textArea.getText(), 50));
 	}
 	
@@ -472,6 +479,7 @@ public class Main extends JFrame {
 		FollowCam cam;
 
 		Entity entity;
+		Entity ground;
 		LightManager lightManager;
 		com.Lyeeedar.Graphics.Renderers.Renderer renderer;
 
@@ -512,8 +520,6 @@ public class Main extends JFrame {
 			lightManager.ambientColour.set(0.3f, 0.3f, 0.3f);
 			GLOBALS.LIGHTS = lightManager;
 			
-			Texture seatex = new Texture(Gdx.files.internal("data/textures/water.png"));
-			seatex.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
 			Weather weather = new Weather(new Vector3(0.4f, 0.6f, 0.6f), new Vector3(-0.3f, -0.3f, 0), new Vector3(0.05f, 0.03f, 0.08f), new Vector3(-0.05f, 0.03f, 0.08f), new Clouds());
 			weather.update(1, cam);
 			SkyBox skybox = new SkyBox(null, weather);
@@ -521,28 +527,34 @@ public class Main extends JFrame {
 			GLOBALS.SKYBOX = skybox;
 
 			entity = new Entity(false, new MinimalPositionalData());
-						
 			GLOBALS.renderTree = new Octtree<Entity>();
-			
 			entry = GLOBALS.renderTree.createEntry(entity, new Vector3(), new Vector3(1, 1, 1), Octtree.MASK_RENDER | Octtree.MASK_SHADOW_CASTING);
 			GLOBALS.renderTree.add(entry);
 			
 			renderer = new DeferredRenderer(cam);
 			
+			Mesh groundMesh = Shapes.getBoxMesh(1000, 1f, 1000, true, false);
+			Texture[] textures = new Texture[]{FileUtils.loadTexture("data/textures/grass01.png", true, TextureFilter.MipMapLinearLinear, TextureWrap.Repeat)};
+			ModelBatchData data = new ModelBatchData(groundMesh, GL20.GL_TRIANGLES, textures, false, false, true, 3);
+			ground = new Entity(false, new MinimalPositionalData());
+			ground.addRenderable(new ModelBatchInstance(data), new Matrix4());
+			GLOBALS.renderTree.add(GLOBALS.renderTree.createEntry(ground, new Vector3(), new Vector3(GLOBALS.FOG_MAX, 1f, GLOBALS.FOG_MAX), Octtree.MASK_RENDER));
+			
 		}
 
 		public void reloadMesh(String file)
 		{
+			FileUtils.clearGrammars();
 			entity.clearRenderables();
 
 			VolumePartitioner vp = VolumePartitioner.load(file);
 			
 			vp.evaluate(xsize, ysize, zsize);
-			vp.collectMeshes(entity, entry, null, new Matrix4());
+			vp.collectMeshes(entity, entry, null);
 			entry.updatePosition();
 			
-			entity.queueRenderables(cam, lightManager, Gdx.app.getGraphics().getDeltaTime(), renderer.getBatches());
-			((ModelBatcher) renderer.getBatches().get(ModelBatcher.class)).clear();
+			ground.readOnlyRead(MinimalPositionalData.class).position.y = (-ysize/2)-1f;
+			
 		}
 
 		@Override
@@ -584,11 +596,13 @@ public class Main extends JFrame {
 		@Override
 		public void render() {
 
-			entity.update(0);
+			entity.update(Gdx.graphics.getDeltaTime());
+			ground.update(Gdx.graphics.getDeltaTime());
+			GLOBALS.SKYBOX.update(Gdx.graphics.getDeltaTime(), cam);
 			updateLight(Gdx.app.getGraphics().getDeltaTime());
 						
-			entity.update(Gdx.app.getGraphics().getDeltaTime());
 			entity.queueRenderables(cam, lightManager, Gdx.app.getGraphics().getDeltaTime(), renderer.getBatches());
+			ground.queueRenderables(cam, lightManager, Gdx.app.getGraphics().getDeltaTime(), renderer.getBatches());
 					
 			renderer.render();
 			

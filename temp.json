@@ -1,234 +1,81 @@
 {
-Main: {
-	X: 50,
-	Y: 50,
-	Z: 200,
-	Rule: CreateBuilding
+Main: { Rule: RootSeperator },
+RootSeperator: {
+	DivideZ: [
+		"80%, MainBuildingSeperator",
+		"20%, TowerAnnexSeperator"
+	]
 },
-CreateBuilding: {
-	Define: {
-		VaultSize: "(X/3)*2",
-		PillarSize: X/7
-	},
-	Divide: {
-		Axis: X,
-		Sizes: [
-			"95%",
-			"5%"
-		],
-		Rules: [
-			SeperateHall,
-			PlaceArches
-		]
-	}
+MainBuildingSeperator: {
+	DivideZ: [ "50%, EntranceSeperator", "50%, HallSeperator" ]
 },
-PlaceArches: {
-	CoordinateSystem: "xyz",
-	Repeat: {
-		Axis: Z,
-		Offset: VaultSize/2,
-		Size: VaultSize,
-		Rule: ArchMesh,
-		RemainderRule: HalfArchMesh,
-		OffsetRule : HalfArchMesh,
-		OffsetCoord : "x180yz"
-	}
+EntranceSeperator: {
+	DivideY: [ "50%, Hall", "10%, Roof", "40%, empty" ]
 },
-SeperateHall: {
-	Divide: {
-		Axis: X,
-		Sizes: [
-			"33%",
-			"34%",
-			"33%"
-		],
-		Rules: [
-			PlaceHalfVaults,
-			PlacePillars,
-			PlaceHalfPillars
-		]
-	}
+HallSeperator: {
+	X: "80%",
+	DivideY: [ "60%, Hall", "10%, Roof", "30%, empty" ]
 },
-PlaceHalfPillars: {
-	Repeat: {
-		Axis: Z,
-		Size: VaultSize,
-		Repeats: -1,
-		Rule: HalfPillar,
-		RemainderRule: empty
-	}
+Hall: {
+	Mesh: { Name: Box, Texture: data/textures/blank }
 },
-HalfPillar: {
-	CoordinateSystem: "x180yz",
-	Divide: {
-		Axis: Y,
-		Sizes: [
-			"10%",
-			"60%",
-			"30%"
-		],
-		Rules: [
-			HalfPillarLedge,
-			HalfPillarMesh,
-			HalfVaultMesh
-		]
-	}
-},
-PlaceHalfVaults: {
-	Repeat: {
-		Axis: Z,
-		Size: VaultSize,
-		Repeats: -1,
-		Rule: HalfVault,
-		RemainderRule: empty
-	}
-},
-HalfVault: {
-	Divide: {
-		Axis: Y,
-		Sizes: [
-			"70%",
-			"30%"
-		],
-		Rules: [
-			empty,
-			HalfVaultMesh
-		]
-	}
-},
-PlacePillars: {
-	Repeat: {
-		Axis: Z,
-		Size: VaultSize,
-		Repeats: -1,
-		Rule: Pillar,
-		RemainderRule: empty
-	}
-},
-Pillar: {
-	Divide: {
-		Axis: Y,
-		Sizes: [
-			"70%",
-			"30%"
-		],
-		Rules: [
-			PillarMesh,
-			VaultMesh
-		]
-	}
-},
-PillarMesh: {
-	X: PillarSize,
-	Z: PillarSize,
-	Mesh: {
-		Name: data/models/romanesque_pillar_01.obj,
-		Texture: data/textures/stone/stone12,
-		TriplanarSample: true,
-		TriplanarScale: 8
-	}
-},
-HalfPillarMesh: {
-	Snap: {
-		X: -1,
-		Y: 0,
-		Z: 0
-	},
-	X: PillarSize/2,
-	Z: PillarSize,
-	Mesh: {
-		Name: data/models/romanesque_pillar_02.obj,
-		Texture: data/textures/stone/stone12,
-		TriplanarSample: true,
-		TriplanarScale: 8
-	}
-},
-HalfPillarLedge: {
-	Snap: {
-		X: -1,
-		Y: 0,
-		Z: 0
-	},
-	X: PillarSize,
+Roof: {
 	Mesh: {
 		Name: Box,
-		Texture: data/textures/stone/stone07,
-		TriplanarSample: true,
-		TriplanarScale: 20
+		LoftX: "80%",
+		LoftZ: "60%",
+		Texture: data/textures/blank
 	}
 },
-HalfVaultMesh: {
-	X: VaultSize/2,
-	Z: VaultSize,
+TowerAnnexSeperator: {
+	DivideX: [
+		"30%, TowerSeperator",
+		"40%, AnnexSeperator",
+		"30%, TowerSeperator"
+	]
+},
+TowerSeperator: {
+	DivideY: [ "80%, Tower", "20%, TowerRoof" ]
+},
+Tower: {
+	Mesh: { Name: Box, Texture: data/textures/blank }
+},
+TowerRoof: {
 	Mesh: {
-		Name: data/models/romanesque_vault_02.obj,
-		Texture: data/textures/stone/stone07,
-		TriplanarSample: true,
-		TriplanarScale: 20
+		Name: Prism,
+		Loft: "0",
+		Texture: data/textures/blank
 	}
 },
-VaultMesh: {
-	X: VaultSize,
-	Z: VaultSize,
-	Mesh: {
-		Name: data/models/romanesque_vault_01.obj,
-		Texture: data/textures/stone/stone07,
-		TriplanarSample: true,
-		TriplanarScale: 20
-	}
+AnnexSeperator: {
+	Snap: { X: 0, Y: 0, Z: -1 },
+	Z: "90%",
+	DivideY: [
+		"30%, Annex",
+		"20%, AnnexRoof",
+		"10%, empty",
+		"10%, Walkway",
+		"30%, empty"
+	]
 },
-Wall: {
-	Divide: {
-		Axis: Y,
-		Sizes: [
-			"75%",
-			"25%"
-		],
-		Rules: [
-			WallBottom,
-			WallTop
-		]
-	}
+Annex: {
+	Mesh: { Name: Box, Texture: data/textures/blank }
 },
-WallTop: {
-	Mesh: {
-		Name: Box,
-		Texture: data/textures/stone/stone07,
-		TriplanarSample: true,
-		TriplanarScale: 20
-	}
-},
-WallBottom: {
+AnnexRoof: {
 	Mesh: {
 		Name: Box,
-		Texture: data/textures/stone/stone08,
-		TriplanarSample: true,
-		TriplanarScale: 20
+		LoftZ : "0",
+		snapz : -1,
+		Texture: data/textures/blank
 	}
 },
-Floor: {
-	Mesh: {
-		Name: Box,
-		Texture: data/textures/stone/stone11,
-		TriplanarSample: true,
-		TriplanarScale: 20
-	}
+Walkway: {
+	Snap: { z: 0 },
+	Z: "20%",
+	Mesh: { Name: Box, Texture: data/textures/blank }
 },
-ArchMesh: {
-	Mesh: {
-		Name: data/models/romanesque_door_01.obj,
-		Texture: data/textures/stone/stone07,
-		TriplanarSample: true,
-		TriplanarScale: 20
-	}
-},
-HalfArchMesh: {
-	Mesh: {
-		Name: data/models/romanesque_door_02.obj,
-		Texture: data/textures/stone/stone07,
-		TriplanarSample: true,
-		TriplanarScale: 20
-	}
+BasicBox: {
+	Mesh: { Name: Box, Texture: data/textures/blank }
 },
 empty: {}
 }
