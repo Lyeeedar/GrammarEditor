@@ -1,0 +1,233 @@
+{
+Main: {
+	Define: {
+		StoryHeight: 7,
+		WindowHeight: 2,
+		WindowWidth: 3,
+		WindowPadding: 2
+	},
+	Rule: RootSeperator
+},
+RootSeperator: {
+	DivideZ: [
+		"80%, MainBuildingSeperator",
+		"20%, TowerAnnexSeperator"
+	]
+},
+MainBuildingSeperator: {
+	DivideZ: [ "50%, EntranceSeperator", "50%, HallSeperator" ]
+},
+EntranceSeperator: {
+	DivideY: [ "50%, Entrance", "10%, Roof", "40%, empty" ]
+},
+HallSeperator: {
+	X: "90%",
+	TempRuleCorridor: {
+		DivideY: [ "StoryHeight, Corridor", "(100%)-StoryHeight, Hall, x90yz" ]
+	},
+	TempRuleMain: {
+		DivideY: [
+			"StoryHeight*3, TempRuleSplit",
+			"(100%)-StoryHeight*3, Hall"
+		]
+	},
+	TempRuleSplit: {
+		DivideX: [
+			"10%, TempRuleCorridor, x-90yz",
+			"80%,empty",
+			"10%, TempRuleCorridor, x90yz"
+		]
+	},
+	DivideY: [ "40%, TempRuleMain", "10%, Roof", "60%, empty" ]
+},
+Corridor: {
+	TempRuleLedge : {
+		DivideY : [ "2, Wall", "Y-2, TempRuleColumns" ]	
+	},
+	TempRuleColumns: {
+		RepeatX: { Size: 3, Rule: Pillar }
+	},
+	TempRuleOcclude : {
+		Snap : {X : 0, Y :-1, Z : 0},
+		Occlude: { Name : Door, X: "150%", Y: StoryHeight-3, OY : 0.1, Z: "3" }
+	},
+	Select: [ "Bottom, 1, Wall", "Front, 1, TempRuleLedge", "Remainder, TempRuleOcclude" ],
+},
+Entrance: {
+	RepeatY: {
+		Size: StoryHeight,
+		Rule: EntranceStory,
+		RemainderRule: SubRoof
+	}
+},
+Hall: {
+	RepeatY: {
+		Size: StoryHeight,
+		Rule: HallStory,
+		RemainderRule: SubRoof
+	}
+},
+SubRoof: {
+	Mesh: { Name: Box, Texture: data/textures/blank }
+},
+Roof: {
+	Mesh: {
+		Name: Box,
+		LoftX: "80%",
+		LoftZ: "60%",
+		Texture: data/textures/blank
+	}
+},
+EntranceStory: {
+	Select: [
+		"Bottom, 1, HallFloor",
+		"Left, 1, WindowedWall, x90yz",
+		"Right, 1, WindowedWall, x-90yz",
+		"Front, 1, Wall",
+		"Back, 1, WindowedWall"
+	]
+},
+HallStory: {
+	Select: [
+		"Bottom, 1, HallFloor",
+		"Left, 1, WindowedWall, x90yz",
+		"Right, 1, WindowedWall, x-90yz",
+		"Front, 1, Wall",
+		"Back, 1, Wall"
+	]
+},
+WindowedWall: {
+	Defer: "",
+	Split: [ "Door, empty", "Remainder, PaddedWall" ]
+},
+PaddedWall: {
+	Define: {
+		OffsetPadding: "mod(X, WindowPadding*2+WindowWidth)/2"
+	},
+	RepeatX: {
+		Size: WindowWidth+WindowPadding*2,
+		Rule: PaddedWindow,
+		Offset: OffsetPadding,
+		OffsetRule: Wall,
+		RemainderRule: Wall
+	}
+},
+PaddedWindow: {
+	DivideX: [
+		"WindowPadding, Wall",
+		"WindowWidth, WindowSection",
+		"WindowPadding, Wall"
+	]
+},
+WindowSection: {
+	DivideY: [
+		"(Y-WindowHeight)/2, Wall",
+		"WindowHeight, Window",
+		"(Y-WindowHeight)/2, Wall"
+	]
+},
+Window: {
+	Rotate: x90yz,
+	Mesh: {
+		Name: data/models/romanesque_door_01.obj,
+		Texture: data/textures/blank,
+		TriplanarSample: true,
+		TriplanarScale: 20
+	}
+},
+Wall: {
+	Defer: "",
+	TempRule1: {
+		Mesh: { Name: Box, Texture: data/textures/blank }
+	},
+	Split: [ "Door, empty", "Remainder, TempRule1" ]
+},
+HallFloor: {
+	Mesh: { Name: Box, Texture: data/textures/blank }
+},
+TowerAnnexSeperator: {
+	DivideX: [
+		"30%, TowerSeperator",
+		"40%, AnnexSeperator",
+		"30%, TowerSeperator"
+	]
+},
+TowerSeperator: {
+	DivideY: [ "80%, Tower", "20%, TowerRoof" ]
+},
+Tower: {
+	Mesh: { Name: Box, Texture: data/textures/blank }
+},
+TowerRoof: {
+	Mesh: {
+		Name: Prism,
+		Loft: "0",
+		Texture: data/textures/blank
+	}
+},
+AnnexSeperator: {
+	Snap: { X: 0, Y: 0, Z: -1 },
+	Z: "90%",
+	DivideY: [
+		"30%, Annex",
+		"20%, AnnexRoof",
+		"10%, empty",
+		"10%, Walkway",
+		"30%, empty"
+	]
+},
+Annex: {
+	Snap: { X: 0, Y: -1, Z: -1 },
+	Occlude: {
+		Name: Door,
+		X: "3",
+		Y: StoryHeight-0.5,
+		Z: "-10",
+		OZ: "5"
+	},
+	Select: [
+		"Bottom, 1, HallFloor",
+		"Left, 1, Wall, x90yz",
+		"Right, 1, Wall, x-90yz",
+		"Front, 1, WindowedWall",
+		"Back, 1, Wall"
+	]
+},
+AnnexRoof: {
+	Mesh: {
+		Name: Box,
+		LoftZ: "0",
+		snapz: -1,
+		Texture: data/textures/blank
+	}
+},
+Walkway: {
+	Snap: { z: 0 },
+	Z: "20%",
+	Mesh: { Name: Box, Texture: data/textures/blank }
+},
+Pillar: {
+	TempRulePillarBody: {
+		X: "0.5",
+		Z: "0.5",
+		Mesh: { Name: Box, Texture: data/textures/blank }
+	},
+	TempRulePillarTop: {
+		Rotate: "180xyz",
+		Mesh: {
+			Name: Box,
+			LoftX: "30%",
+			LoftZ: "30%",
+			Texture: data/textures/blank
+		}
+	},
+	DivideY: [
+		"70%, TempRulePillarBody",
+		"30%, TempRulePillarTop"
+	]
+},
+BasicBox: {
+	Mesh: { Name: Box, Texture: data/textures/blank }
+},
+empty: {}
+}

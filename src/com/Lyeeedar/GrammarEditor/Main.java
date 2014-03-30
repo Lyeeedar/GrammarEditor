@@ -123,7 +123,7 @@ public class Main extends JFrame {
 		}
 
 		LwjglApplicationConfiguration cfg = new LwjglApplicationConfiguration();
-		cfg.title = "ParticleEditor";
+		cfg.title = "GrammarEditor";
 		cfg.useGL30 = true;
 		cfg.width = 800;
 		cfg.height = 600;
@@ -535,7 +535,7 @@ public class Main extends JFrame {
 			
 			Mesh groundMesh = Shapes.getBoxMesh(1000, 1f, 1000, true, false);
 			Texture[] textures = new Texture[]{FileUtils.loadTexture("data/textures/grass01.png", true, TextureFilter.MipMapLinearLinear, TextureWrap.Repeat)};
-			ModelBatchData data = new ModelBatchData(groundMesh, GL20.GL_TRIANGLES, textures, false, false, true, 3);
+			ModelBatchData data = new ModelBatchData(groundMesh, GL20.GL_TRIANGLES, textures, false, false, true, 1);
 			ground = new Entity(false, new MinimalPositionalData());
 			ground.addRenderable(new ModelBatchInstance(data), new Matrix4());
 			GLOBALS.renderTree.add(GLOBALS.renderTree.createEntry(ground, new Vector3(), new Vector3(GLOBALS.FOG_MAX, 1f, GLOBALS.FOG_MAX), Octtree.MASK_RENDER));

@@ -1,81 +1,142 @@
 {
-Main: { Rule: RootSeperator },
-RootSeperator: {
-	DivideZ: [
-		"80%, MainBuildingSeperator",
-		"20%, TowerAnnexSeperator"
-	]
+Main: {
+	Define: {
+		StepHeight: 1,
+		StepWidth: 10,
+		StoryHeight: 10,
+		StepDepth : 3,
+		StepTexture: data/textures/blank
+	},
+	Rule: StepsSpiral
 },
-MainBuildingSeperator: {
-	DivideZ: [ "50%, EntranceSeperator", "50%, HallSeperator" ]
+StepsSpiral: {
+	TempRuleStep: {
+		Z: "StepDepth",
+		X : "50%",
+		Rotate: { Angle: i*10 },
+		Move: { X: "49%" },
+		Rule: StepShape
+	},
+	Define: { i: 0 },
+	RepeatY: {
+		Size: StepHeight,
+		Rule: TempRuleStep,
+		RepeatRule: {
+			Define: { i: i+1 }
+		}
+	},
+	Child: {
+		X : "StepDepth",
+		Z : "StepDepth",
+		Mesh: {
+			Name: Cylinder,
+			Texture: data/textures/blank,
+			HollowScale: 0,
+			Phi: 32
+		}
+	},
+	Child: {
+		Mesh: {
+			Name: Cylinder,
+			Texture: data/textures/blank,
+			HollowScale: 0.95,
+			Phi: 32
+		}
+	}
 },
-EntranceSeperator: {
-	DivideY: [ "50%, Hall", "10%, Roof", "40%, empty" ]
+StepsTower: {
+	TempRulePlatform: {
+		MultiConditional: {
+			defined(addDoor): {
+				Occlude: { Z: "150%", Name: Door }
+			}
+		},
+		Snap: { Y: "-1" },
+		Y: StepHeight*2,
+		Move: { Y: "-StepHeight" },
+		Rule: StepShape
+	},
+	TempRuleSteps: {
+		DivideZ: [
+			"StepWidth, TempRulePlatform",
+			"Z-StepWidth*2, StepsStraight",
+			"StepWidth, empty"
+		]
+	},
+	TempRuleBack: {
+		Select: [ "Back, StepWidth, TempRuleSteps, x-90yz" ]
+	},
+	TempRuleLeft: {
+		Select: [ "Left, StepWidth, TempRuleSteps, xyz" ]
+	},
+	TempRuleFront: {
+		Select: [ "Front, StepWidth, TempRuleSteps, x90yz" ]
+	},
+	TempRuleRight: {
+		Select: [ "Right, StepWidth, TempRuleSteps, x180yz" ]
+	},
+	TempRuleSelector: {
+		MultiConditional: {
+			i==3: TempRuleRight,
+			i==2: TempRuleFront,
+			i==1: TempRuleLeft,
+			else: TempRuleBack
+		}
+	},
+	Define: { i: 0 },
+	RepeatY: {
+		Size: StoryHeight,
+		Rule: TempRuleSelector,
+		RepeatRule: {
+			Define: { i: "mod(i+1, 4)" }
+		}
+	}
 },
-HallSeperator: {
-	X: "80%",
-	DivideY: [ "60%, Hall", "10%, Roof", "30%, empty" ]
+StepsStraight: {
+	MultiConditional: {
+		"defined(StepHeight), defined(StepDepth)": empty,
+		defined(StepHeight): {
+			Define: { StepDepth: Z/(Y/StepHeight) }
+		},
+		defined(StepDepth): {
+			Define: { StepHeight: Y/(Z/StepDepth) }
+		},
+		else: {
+			Define: { StepDepth: 1, StepHeight: 1 }
+		}
+	},
+	Rule: Steps
 },
-Hall: {
-	Mesh: { Name: Box, Texture: data/textures/blank }
+Steps: {
+	Define: { StepNum: 1 },
+	Repeat: {
+		Axis: Z,
+		Size: StepDepth,
+		Repeats: -1,
+		Rule: Step,
+		RemainderRule: StepShape,
+		RepeatRule: {
+			Define: { StepNum: StepNum+1 }
+		}
+	}
 },
-Roof: {
+Step: {
+	Divide: {
+		Axis: Y,
+		Sizes: [
+			"(StepNum-2)*StepHeight",
+			StepHeight*2,
+			"(100%)-StepNum*StepHeight"
+		],
+		Rules: [ empty, StepShape, empty ]
+	}
+},
+StepShape: {
 	Mesh: {
 		Name: Box,
-		LoftX: "80%",
-		LoftZ: "60%",
-		Texture: data/textures/blank
+		Texture: StepTexture,
+		TriplanarSample: false
 	}
-},
-TowerAnnexSeperator: {
-	DivideX: [
-		"30%, TowerSeperator",
-		"40%, AnnexSeperator",
-		"30%, TowerSeperator"
-	]
-},
-TowerSeperator: {
-	DivideY: [ "80%, Tower", "20%, TowerRoof" ]
-},
-Tower: {
-	Mesh: { Name: Box, Texture: data/textures/blank }
-},
-TowerRoof: {
-	Mesh: {
-		Name: Prism,
-		Loft: "0",
-		Texture: data/textures/blank
-	}
-},
-AnnexSeperator: {
-	Snap: { X: 0, Y: 0, Z: -1 },
-	Z: "90%",
-	DivideY: [
-		"30%, Annex",
-		"20%, AnnexRoof",
-		"10%, empty",
-		"10%, Walkway",
-		"30%, empty"
-	]
-},
-Annex: {
-	Mesh: { Name: Box, Texture: data/textures/blank }
-},
-AnnexRoof: {
-	Mesh: {
-		Name: Box,
-		LoftZ : "0",
-		snapz : -1,
-		Texture: data/textures/blank
-	}
-},
-Walkway: {
-	Snap: { z: 0 },
-	Z: "20%",
-	Mesh: { Name: Box, Texture: data/textures/blank }
-},
-BasicBox: {
-	Mesh: { Name: Box, Texture: data/textures/blank }
 },
 empty: {}
 }
