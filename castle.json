@@ -1,4 +1,5 @@
 {
+Imports: [ steps.json ],
 Main: {
 	Define: {
 		StoryHeight: 7,
@@ -23,7 +24,10 @@ EntranceSeperator: {
 HallSeperator: {
 	X: "90%",
 	TempRuleCorridor: {
-		DivideY: [ "StoryHeight, Corridor", "(100%)-StoryHeight, Hall, x90yz" ]
+		DivideY: [
+			"StoryHeight, Corridor",
+			"(100%)-StoryHeight, Corridor, x180yz"
+		]
 	},
 	TempRuleMain: {
 		DivideY: [
@@ -34,31 +38,59 @@ HallSeperator: {
 	TempRuleSplit: {
 		DivideX: [
 			"10%, TempRuleCorridor, x-90yz",
-			"80%,empty",
+			"80%, GreatHall",
 			"10%, TempRuleCorridor, x90yz"
 		]
 	},
 	DivideY: [ "40%, TempRuleMain", "10%, Roof", "60%, empty" ]
 },
 Corridor: {
-	TempRuleLedge : {
-		DivideY : [ "2, Wall", "Y-2, TempRuleColumns" ]	
+	TempRuleLedge: {
+		DivideY: [ "2, Wall", "Y-2, TempRuleColumns" ]
 	},
 	TempRuleColumns: {
 		RepeatX: { Size: 3, Rule: Pillar }
 	},
-	TempRuleOcclude : {
-		Snap : {X : 0, Y :-1, Z : 0},
-		Occlude: { Name : Door, X: "150%", Y: StoryHeight-3, OY : 0.1, Z: "3" }
+	TempRuleOcclude: {
+		Snap: { X: 0, Y: -1, Z: 0 },
+		Occlude: {
+			Name: Door,
+			X: "150%",
+			Y: StoryHeight-3,
+			OY: 0.1,
+			Z: "3"
+		}
 	},
-	Select: [ "Bottom, 1, Wall", "Front, 1, TempRuleLedge", "Remainder, TempRuleOcclude" ],
+	Select: [
+		"Bottom, 1, Wall",
+		"Front, 1, TempRuleLedge",
+		"Back, 1, Wall",
+		"Remainder, TempRuleOcclude"
+	]
 },
 Entrance: {
+	Child: {
+		Define : {
+			StepHeight : 0.1,
+			StepWidth : 2,
+			StepTexture : data/textures/blank
+		},
+		X: "(X*0.2+Z*0.2)/2",
+		Z: "X",
+		Move : {Y:"1-StepHeight"},
+		Snap : {Y : -1},
+		Y : "(100%)-StoryHeight/2",
+		Occlude: { Y: "(100%)-2", OY: 1, Name: Stairs },
+		Rule : steps.StepsTower
+	},
 	RepeatY: {
 		Size: StoryHeight,
 		Rule: EntranceStory,
 		RemainderRule: SubRoof
 	}
+},
+GreatHall: {
+	Select: [ "Bottom, 1, HallFloor" ]
 },
 Hall: {
 	RepeatY: {
@@ -143,7 +175,10 @@ Wall: {
 	Split: [ "Door, empty", "Remainder, TempRule1" ]
 },
 HallFloor: {
-	Mesh: { Name: Box, Texture: data/textures/blank }
+	TempRuleFloor: {
+		Mesh: { Name: Box, Texture: data/textures/blank }
+	},
+	Split: [ "Stairs, empty", "Remainder, TempRuleFloor" ]
 },
 TowerAnnexSeperator: {
 	DivideX: [

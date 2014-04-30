@@ -1,142 +1,21 @@
 {
 Main: {
-	Define: {
-		StepHeight: 1,
-		StepWidth: 10,
-		StoryHeight: 10,
-		StepDepth : 3,
-		StepTexture: data/textures/blank
-	},
-	Rule: StepsSpiral
+	GraphData: { X: 90, Y: 8 },
+	Rule: WallSelector
 },
-StepsSpiral: {
-	TempRuleStep: {
-		Z: "StepDepth",
-		X : "50%",
-		Rotate: { Angle: i*10 },
-		Move: { X: "49%" },
-		Rule: StepShape
-	},
-	Define: { i: 0 },
-	RepeatY: {
-		Size: StepHeight,
-		Rule: TempRuleStep,
-		RepeatRule: {
-			Define: { i: i+1 }
-		}
-	},
-	Child: {
-		X : "StepDepth",
-		Z : "StepDepth",
-		Mesh: {
-			Name: Cylinder,
-			Texture: data/textures/blank,
-			HollowScale: 0,
-			Phi: 32
-		}
-	},
-	Child: {
-		Mesh: {
-			Name: Cylinder,
-			Texture: data/textures/blank,
-			HollowScale: 0.95,
-			Phi: 32
-		}
-	}
+BasicBox: {
+	GraphData: { X: 562, Y: -4 },
+	Mesh: { Name: Box, Texture: data/textures/blank }
 },
-StepsTower: {
-	TempRulePlatform: {
-		MultiConditional: {
-			defined(addDoor): {
-				Occlude: { Z: "150%", Name: Door }
-			}
-		},
-		Snap: { Y: "-1" },
-		Y: StepHeight*2,
-		Move: { Y: "-StepHeight" },
-		Rule: StepShape
-	},
-	TempRuleSteps: {
-		DivideZ: [
-			"StepWidth, TempRulePlatform",
-			"Z-StepWidth*2, StepsStraight",
-			"StepWidth, empty"
-		]
-	},
-	TempRuleBack: {
-		Select: [ "Back, StepWidth, TempRuleSteps, x-90yz" ]
-	},
-	TempRuleLeft: {
-		Select: [ "Left, StepWidth, TempRuleSteps, xyz" ]
-	},
-	TempRuleFront: {
-		Select: [ "Front, StepWidth, TempRuleSteps, x90yz" ]
-	},
-	TempRuleRight: {
-		Select: [ "Right, StepWidth, TempRuleSteps, x180yz" ]
-	},
-	TempRuleSelector: {
-		MultiConditional: {
-			i==3: TempRuleRight,
-			i==2: TempRuleFront,
-			i==1: TempRuleLeft,
-			else: TempRuleBack
-		}
-	},
-	Define: { i: 0 },
-	RepeatY: {
-		Size: StoryHeight,
-		Rule: TempRuleSelector,
-		RepeatRule: {
-			Define: { i: "mod(i+1, 4)" }
-		}
-	}
-},
-StepsStraight: {
-	MultiConditional: {
-		"defined(StepHeight), defined(StepDepth)": empty,
-		defined(StepHeight): {
-			Define: { StepDepth: Z/(Y/StepHeight) }
-		},
-		defined(StepDepth): {
-			Define: { StepHeight: Y/(Z/StepDepth) }
-		},
-		else: {
-			Define: { StepDepth: 1, StepHeight: 1 }
-		}
-	},
-	Rule: Steps
-},
-Steps: {
-	Define: { StepNum: 1 },
-	Repeat: {
-		Axis: Z,
-		Size: StepDepth,
-		Repeats: -1,
-		Rule: Step,
-		RemainderRule: StepShape,
-		RepeatRule: {
-			Define: { StepNum: StepNum+1 }
-		}
-	}
-},
-Step: {
-	Divide: {
-		Axis: Y,
-		Sizes: [
-			"(StepNum-2)*StepHeight",
-			StepHeight*2,
-			"(100%)-StepNum*StepHeight"
-		],
-		Rules: [ empty, StepShape, empty ]
-	}
-},
-StepShape: {
-	Mesh: {
-		Name: Box,
-		Texture: StepTexture,
-		TriplanarSample: false
-	}
+WallSelector: {
+	GraphData: { X: 263, Y: 22 },
+	Select: [
+		"Left,1,BasicBox,x90yz",
+		"Right,1,BasicBox",
+		"Front,1,BasicBox",
+		"Back,1,BasicBox",
+		"Remainder,empty"
+	]
 },
 empty: {}
 }

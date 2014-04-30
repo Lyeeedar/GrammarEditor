@@ -1,21 +1,86 @@
 {
 Main: {
 	Define: {
-		StepHeight: 1,
-		StepWidth: 10,
-		StoryHeight: 10,
-		StepTexture: data/textures/blank
+		StepHeight: 0.2,
+		StepWidth: 5,
+		StoryHeight: 50,
+		StepTexture: data/textures/stone/stone10,
+		Bannister : "",
+		BannisterHeight : 2,
+		BannisterOffset : 0.2,
+		BannisterSize : 0.1,
+		BannisterTexture : data/textures/stone/stone10
 	},
-	Rule: StepsSpiral
+	Rule: StepsColumn
+},
+StepsColumn : {
+	TempRulePlatformBot: {
+		MultiConditional: {
+			"defined(addDoor),defined(Lower)": {
+				Occlude: { Z: "150%", Name: Door }
+			}
+		},
+		Snap: { Y: "-1" },
+		Y: StepHeight*2,
+		Move: { Y: "-StepHeight" },
+		Rule: StepShape
+	},
+	TempRulePlatformTop: {
+		Snap: { Y: "1" },
+		Y: StepHeight*2,
+		Move: { Y: StepHeight },
+		Rule: StepShape
+	},
+	TempRuleFlightLowerSteps : {
+		Define : {
+			Lower : ""
+		},
+		DivideZ : [
+			"StepWidth, TempRulePlatformBot",
+			"Z-StepWidth*2, StepsStraight",
+			"StepWidth, TempRulePlatformTop"
+		]
+	},
+	TempRuleFlightHigherSteps : {
+		Rotate : x180yz,
+		DivideZ : [
+			"StepWidth, TempRulePlatformBot",
+			"Z-StepWidth*2, StepsStraight",
+			"StepWidth, TempRulePlatformTop"
+		]
+	},
+	TempRuleFlightLower : {
+		DivideX : [
+			"50%, empty",
+			"50%, TempRuleFlightLowerSteps"
+		]
+	},
+	TempRuleFlightHigher : {
+		DivideX : [
+			"50%, TempRuleFlightHigherSteps",
+			"50%, empty"
+		]
+	},
+	TempRuleFlight : {
+		DivideY : [
+			"50%, TempRuleFlightLower",
+			"50%, TempRuleFlightHigher"
+		]
+	},
+	RepeatY : {
+		Size : StoryHeight,
+		Rule : TempRuleFlight
+	}
 },
 StepsSpiral: {
 	TempRuleStep: {
-		Z: "20%",
 		Rotate: { Angle: i*10 },
-		Move: { X: "49%" },
-		Rule: StepShape
+		Move: { X: "(X-StepWidth-1)/2" },
+		Z: StepDepth,
+		X: StepWidth+1,
+		Rule: Step
 	},
-	Define: { i: 0 },
+	Define: { i: 0, StepNum : 1 },
 	RepeatY: {
 		Size: StepHeight,
 		Rule: TempRuleStep,
@@ -24,28 +89,19 @@ StepsSpiral: {
 		}
 	},
 	Child: {
-		X : "50%",
-		Z : "50%",
+		X: X-StepWidth*2,
+		Z: Z-StepWidth*2,
 		Mesh: {
 			Name: Cylinder,
-			Texture: data/textures/blank,
+			Texture: StepTexture,
+			TriplanarScale: 1,
 			HollowScale: 0,
-			Phi: 32
-		}
-	},
-	Child: {
-		X : "200%",
-		Z : "200%",
-		Mesh: {
-			Name: Cylinder,
-			Texture: data/textures/blank,
-			HollowScale: 0.95,
 			Phi: 32
 		}
 	}
 },
 StepsTower: {
-	TempRulePlatform: {
+	TempRulePlatformBottom: {
 		MultiConditional: {
 			defined(addDoor): {
 				Occlude: { Z: "150%", Name: Door }
@@ -56,12 +112,34 @@ StepsTower: {
 		Move: { Y: "-StepHeight" },
 		Rule: StepShape
 	},
+	TempRulePlatform: {
+		MultiConditional: {
+			defined(addDoor): {
+				Occlude: { Z: "150%", Name: Door }
+			}
+		},
+		Snap: { Y: "1" },
+		Y: StepHeight*2,
+		Move: { Y: StepHeight },
+		Rule: StepShape
+	},
 	TempRuleSteps: {
-		DivideZ: [
-			"StepWidth, TempRulePlatform",
-			"Z-StepWidth*2, StepsStraight",
-			"StepWidth, empty"
-		]
+		MultiConditional: {
+			defined(first): {
+				DivideZ: [
+					"StepWidth, empty",
+					"Z-StepWidth*2, StepsStraight",
+					"StepWidth, TempRulePlatform"
+				]
+			},
+			else: {
+				DivideZ: [
+					"StepWidth, TempRulePlatformBottom",
+					"Z-StepWidth*2, StepsStraight",
+					"StepWidth, TempRulePlatform"
+				],
+			}
+		}
 	},
 	TempRuleBack: {
 		Select: [ "Back, StepWidth, TempRuleSteps, x-90yz" ]
@@ -88,7 +166,7 @@ StepsTower: {
 		Size: StoryHeight,
 		Rule: TempRuleSelector,
 		RepeatRule: {
-			Define: { i: "mod(i+1, 4)" }
+			Define: { i: "mod(i+1, 4)", first:""}
 		}
 	}
 },
@@ -109,33 +187,57 @@ StepsStraight: {
 },
 Steps: {
 	Define: { StepNum: 1 },
-	Repeat: {
-		Axis: Z,
+	RepeatZ: {
 		Size: StepDepth,
-		Repeats: -1,
 		Rule: Step,
-		RemainderRule: StepShape,
+		RemainderRule: Step,
 		RepeatRule: {
 			Define: { StepNum: StepNum+1 }
 		}
 	}
 },
 Step: {
-	Divide: {
-		Axis: Y,
-		Sizes: [
-			"(StepNum-2)*StepHeight",
-			StepHeight*2,
-			"(100%)-StepNum*StepHeight"
-		],
-		Rules: [ empty, StepShape, empty ]
+	DivideY : [
+		"(StepNum-2)*StepHeight, empty",
+		"StepHeight*2, StepShape",
+		"(100%)-StepNum*StepHeight, empty"
+	],
+	TempRuleBannister : {
+		Snap : {
+			Y : "-1"
+		},
+		X : BannisterSize,
+		Y : BannisterHeight,
+		Z : BannisterSize,
+		Move : {
+			Y : "(StepNum-2)*StepHeight+StepHeight*2"
+		},
+		Rule : Bannister
+	},
+	MultiConditional : {
+		"defined(Bannister)" : {
+			DivideX : [
+				"BannisterOffset, empty",
+				"BannisterSize, TempRuleBannister",
+				"X-(BannisterOffset*2+BannisterSize*2), empty",
+				"BannisterSize, TempRuleBannister",
+				"BannisterOffset, empty"
+			]
+		}
 	}
 },
 StepShape: {
 	Mesh: {
 		Name: Box,
 		Texture: StepTexture,
-		TriplanarSample: false
+		TriplanarScale: 1
+	}
+},
+Bannister : {
+	Mesh : {
+		Name : Box,
+		Texture : BannisterTexture,
+		TriplanarScale : 1
 	}
 },
 empty: {}

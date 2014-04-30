@@ -4,6 +4,8 @@ import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Event;
 import java.awt.EventQueue;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
@@ -99,6 +101,7 @@ public class Main extends JFrame {
 	JPanel right;
 	JPanel bottom;
 	EnhancedJTextArea textArea;
+	EdittableGraph graph;
 
 	final Renderer renderer;
 
@@ -112,6 +115,8 @@ public class Main extends JFrame {
 		});
 		setLocationRelativeTo(null);
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+		
+		graph = new EdittableGraph();
 
 		seperateFrame();
 		right();
@@ -133,13 +138,12 @@ public class Main extends JFrame {
 		left.add(canvas.getCanvas());
 
 		setVisible(true);
-
 	}
 
 	public void newGrammar()
 	{
-		textArea.setText("{Main:{Rule:BasicBox}, BasicBox:{Mesh: { Name:Box,Texture:data/textures/blank}}}");
-		textArea.setText(new Json().prettyPrint(textArea.getText(), 50));
+		graph.load("{Main:{GraphData:{X:50,Y:50},Rule:BasicBox}, BasicBox:{GraphData:{X:200,Y:50},Mesh: { Name:Box,Texture:data/textures/blank}}}");
+		textArea.setText(graph.compile());
 	}
 	
 	public void save()
@@ -165,6 +169,7 @@ public class Main extends JFrame {
 				e1.printStackTrace();
 			}
 
+			textArea.setText(graph.compile());
 			String text = textArea.getText();
 
 			BufferedWriter writer = null;
@@ -221,7 +226,8 @@ public class Main extends JFrame {
 			}
 		}
 
-		textArea.setText(text);
+		graph.load(text);
+		textArea.setText(graph.compile());
 
 		right();
 		
@@ -266,6 +272,8 @@ public class Main extends JFrame {
 				} catch (IOException e1) {
 					e1.printStackTrace();
 				}
+				
+				textArea.setText(graph.compile());
 
 				String text = textArea.getText();
 
@@ -356,16 +364,38 @@ public class Main extends JFrame {
 		left.setLayout(new GridLayout(1, 1));
 		right = new JPanel();
 		right.setLayout(new GridLayout(1, 1));
+		
+		JPanel top = new JPanel();
+		top.setLayout(new BorderLayout());
+		
 		bottom = new JPanel();
 		bottom.setLayout(new GridLayout(1, 1));
 
 		left.setMinimumSize(new Dimension(500, 300));
+		
+		top.add(left, BorderLayout.CENTER);
+		top.add(right, BorderLayout.EAST);
 
-		setLayout(new BorderLayout());
+		setLayout(new GridBagLayout());
+		
+		GridBagConstraints gc = new GridBagConstraints();
 
-		add(left, BorderLayout.CENTER);
-		add(right, BorderLayout.EAST);
-		add(bottom, BorderLayout.SOUTH);
+		gc.fill = GridBagConstraints.BOTH;
+		
+		gc.gridx = 0;
+		gc.gridy = 0;
+		gc.weightx = 1;
+		gc.weighty = 1;
+		
+		add(top, gc);
+		
+		gc.gridx = 0;
+		gc.gridy = 1;
+		gc.weighty = 3;
+		
+		add(bottom, gc);	
+		
+		bottom.add(graph);
 	}
 
 	public void createMenuBar()
