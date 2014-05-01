@@ -1,21 +1,28 @@
 {
 Main: {
-	GraphData: { X: 90, Y: 8 },
+	GraphData: { X: -22, Y: -53 },
 	Rule: WallSelector
 },
 BasicBox: {
-	GraphData: { X: 562, Y: -4 },
+	GraphData: { X: 670, Y: -72 },
 	Mesh: { Name: Box, Texture: data/textures/blank }
 },
+AutoAssignedName: {
+	GraphData: { X: 436, Y: 114 },
+	Define: { i: i+1 }
+},
 WallSelector: {
-	GraphData: { X: 263, Y: 22 },
-	Select: [
-		"Left,1,BasicBox,x90yz",
-		"Right,1,BasicBox",
-		"Front,1,BasicBox",
-		"Back,1,BasicBox",
-		"Remainder,empty"
-	]
+	GraphData: { X: 151, Y: -38 },
+	Define: { i: 1 },
+	RepeatZ: {
+		Size: 1,
+		Rule: AutoAssignedName0,
+		RepeatRule: AutoAssignedName
+	}
+},
+AutoAssignedName0: {
+	GraphData: { X: 455, Y: -34 },
+	DivideY: [ "i,BasicBox", "(100%)-i,empty" ]
 },
 empty: {}
 }

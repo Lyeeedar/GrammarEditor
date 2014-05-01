@@ -1465,6 +1465,17 @@ public abstract class EditFrame extends JFrame
 			
 			gc.gridy++;
 			
+			gc.gridx = 0;
+			top.add(new JLabel("HasRepeatRule"), gc);
+			
+			final JCheckBox hasrepeat = new JCheckBox();
+			hasrepeat.setSelected(exp.hasConnector("RepeatRule"));
+			
+			gc.gridx = 1;
+			top.add(hasrepeat, gc);
+			
+			gc.gridy++;
+			
 			JButton apply = new JButton("Apply");
 			apply.addActionListener(new ActionListener(){
 
@@ -1522,6 +1533,18 @@ public abstract class EditFrame extends JFrame
 					else
 					{
 						exp.removeConnection("RemainderRule");
+					}
+					
+					if (hasrepeat.isSelected())
+					{
+						if (!exp.hasConnector("RepeatRule"))
+						{
+							exp.addConnection("RepeatRule");
+						}
+					}
+					else
+					{
+						exp.removeConnection("RepeatRule");
 					}
 
 					ref.dispose();

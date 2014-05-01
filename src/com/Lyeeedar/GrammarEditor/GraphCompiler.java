@@ -293,7 +293,7 @@ public abstract class GraphCompiler
 			
 			for (GraphConnector connector : object.connectors)
 			{
-				code += connector.name + "," + connector.getLinkedName() + ",";
+				code += connector.name + " : " + connector.getLinkedName() + ",";
 			}
 			
 			code += "},";

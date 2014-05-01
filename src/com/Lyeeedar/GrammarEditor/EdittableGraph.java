@@ -343,8 +343,8 @@ public class EdittableGraph extends JPanel implements MouseListener, MouseMotion
 			chosen = node;
 		}
 
-		selected = chosen;
 		updateHidden();
+		selected = chosen;
 	}
 
 	public void updateLinks(GraphNode onode, GraphNode nnode)
@@ -378,15 +378,23 @@ public class EdittableGraph extends JPanel implements MouseListener, MouseMotion
 		}
 		else if (selected instanceof GraphConnector)
 		{
-			((GraphConnector)selected).addLink(null);
+			boolean needsBreak = true;
 			for (GraphNode n : nodes)
 			{
-				if (n.getItem(lx, ly, false) != null)
+				GraphObject o = n.getItem(lx, ly, false);
+				if (o != null && o instanceof GraphNode)
 				{
 					((GraphConnector)selected).addLink(n);
+					needsBreak = false;
+					break;
+				}
+				else if (o != null && o == selected)
+				{
+					needsBreak = false;
 					break;
 				}
 			}
+			if (needsBreak) ((GraphConnector)selected).addLink(null);
 		}
 		else if (selected instanceof GraphMethod)
 		{
@@ -1095,9 +1103,6 @@ public class EdittableGraph extends JPanel implements MouseListener, MouseMotion
 
 			g.setColor(Color.BLACK);
 			g.drawString(name, x+25, y+15);
-			
-			String collapse = collapsed ? ">>" : "--" ;
-			g.drawString(collapse, x+5, y+15);
 
 			if (!collapsed && linked != null)
 			{
@@ -1120,12 +1125,6 @@ public class EdittableGraph extends JPanel implements MouseListener, MouseMotion
 		@Override
 		public GraphObject getItem(int x, int y, boolean pressed)
 		{
-			if (pressed && x > this.x && x < this.x+5+12 && y > this.y && y < this.y+20)
-			{
-				collapsed = !collapsed;
-				return null;
-			}
-			
 			if (x < this.x || x > this.x+50+name.length()*6 || y < this.y || y > this.y+20) return null;
 			return this;
 		}
@@ -1154,14 +1153,7 @@ public class EdittableGraph extends JPanel implements MouseListener, MouseMotion
 		{
 			if (linked == node)
 			{
-				if (collapsed)
-				{
-					return 1;
-				}
-				else
-				{
-					return 0;
-				}
+				return 0;
 			}
 			else
 			{

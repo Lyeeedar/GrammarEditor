@@ -263,6 +263,7 @@ public class GraphParser
 			String rule = current.getString("Rule", "empty");
 			String offsetRule = current.getString("OffsetRule", "empty");
 			String remainderRule = current.getString("RemainderRule", "empty");
+			String repeatRule = current.getString("RepeatRule", "empty");
 			
 			String ruleCoord = current.getString("RuleCoord", "xyz");
 			String offsetCoord = current.getString("OffsetCoord", "xyz");
@@ -295,6 +296,13 @@ public class GraphParser
 				exp.connectors.add(con);
 				
 				if (!remainderCoord.equalsIgnoreCase("xyz")) exp.data.put("RemainderCoord", remainderCoord);
+			}
+			
+			if (!repeatRule.equalsIgnoreCase("empty"))
+			{
+				con = graph.new GraphConnector("RepeatRule", exp);
+				con.addLink((GraphNode) pairs.get(repeatRule)[0]);
+				exp.connectors.add(con);				
 			}
 			
 			node.insert(exp);
