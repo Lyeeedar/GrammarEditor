@@ -205,12 +205,14 @@ public class EdittableGraph extends JPanel implements MouseListener, MouseMotion
 		});
 	}
 
-	private void markLoops()
+	private ArrayList<GraphLoop> markLoops()
 	{
 		for (GraphNode node : nodes)
 		{
 			node.inLoop = false;
 		}
+		
+		ArrayList<GraphLoop> loops = new ArrayList<GraphLoop>();
 		
 		for (GraphNode node : nodes)
 		{
@@ -219,29 +221,52 @@ public class EdittableGraph extends JPanel implements MouseListener, MouseMotion
 				n.loopChecked = false;
 			}
 			
-			LinkedList<GraphNode> processList = new LinkedList<GraphNode>();
-			processList.addLast(node);
+			LinkedList<Pair<GraphNode, HashSet<GraphNode>>> processList = new LinkedList<Pair<GraphNode, HashSet<GraphNode>>>();
+			processList.addLast(new Pair<GraphNode, HashSet<GraphNode>>(node, new HashSet<GraphNode>()));
 			
 			outer:
 			while (!processList.isEmpty())
 			{
-				GraphNode n = processList.removeFirst();
-				for (Entry<GraphNode, ArrayList<GraphExpression>> entry : n.parents.entrySet())
+				Pair<GraphNode, HashSet<GraphNode>> pair = processList.removeFirst();
+				GraphNode n = pair.val1;
+				for (Entry<GraphNode, HashSet<GraphExpression>> entry : n.parents.entrySet())
 				{
+					HashSet<GraphNode> lsf = new HashSet<GraphNode>();
+					lsf.addAll(pair.val2);
+					lsf.add(entry.getKey());
+					
 					if (entry.getKey() == node)
 					{
 						node.inLoop = true;
+						
+						boolean found = false;
+						for (GraphLoop loop : loops)
+						{
+							if (loop.isSame(lsf))
+							{
+								found = true;
+								break;
+							}
+						}
+						
+						if (!found)
+						{
+							loops.add(new GraphLoop(lsf));
+						}
+						
 						break outer;
 					}
 					
 					if (!entry.getKey().loopChecked)
 					{
 						entry.getKey().loopChecked = true;
-						processList.addLast(entry.getKey());
+						processList.addLast(new Pair<GraphNode, HashSet<GraphNode>>(entry.getKey(), lsf));
 					}
 				}
 			}
 		}
+		
+		return loops;
 	}
 	
 	private void markParents()
@@ -264,7 +289,7 @@ public class EdittableGraph extends JPanel implements MouseListener, MouseMotion
 							{
 								if (!node.parents.containsKey(n))
 								{
-									node.parents.put(n, new ArrayList<GraphExpression>());
+									node.parents.put(n, new HashSet<GraphExpression>());
 								}
 								node.parents.get(n).add(exp);
 							}
@@ -278,15 +303,47 @@ public class EdittableGraph extends JPanel implements MouseListener, MouseMotion
 	private void updateHidden()
 	{
 		markParents();
-		markLoops();
+		ArrayList<GraphLoop> loops = markLoops();
 		
 		int i = 0;
 		
 		for (; i < nodes.size(); i++)
 		{
 			GraphNode node = nodes.get(i);
-						
-			if (!node.inLoop && shouldCollapse(node))
+			
+			if (node.inLoop)
+			{
+				int sval = 0;
+				for (GraphLoop loop : loops)
+				{
+					int val = loop.shouldHide(node);
+					
+					if (val == 1) sval = 1;
+					else if (val == 0)
+					{
+						sval = 0;
+						break;
+					}
+				}
+				
+				if (sval == 1)
+				{
+					if (!node.hidden)
+					{
+						node.hidden = true;
+						i = 0;
+					}
+				}
+				else
+				{
+					if (node.hidden)
+					{
+						node.hidden = false;
+						i = 0;
+					}
+				}
+			}
+			else if (shouldCollapse(node))
 			{
 				if (!node.hidden)
 				{
@@ -308,7 +365,7 @@ public class EdittableGraph extends JPanel implements MouseListener, MouseMotion
 	private boolean shouldCollapse(GraphNode n)
 	{
 		int sval = -1;
-		for (Map.Entry<GraphNode, ArrayList<GraphExpression>> entry : n.parents.entrySet())
+		for (Map.Entry<GraphNode, HashSet<GraphExpression>> entry : n.parents.entrySet())
 		{
 			if (entry.getKey() == n) return false;
 			
@@ -399,9 +456,10 @@ public class EdittableGraph extends JPanel implements MouseListener, MouseMotion
 			{
 				node.remove(chosen);
 				node = new GraphNode("", null);
-				node.x = lx;
-				node.y = ly;
+				node.x = (int) (lx/transform.getScaleX());
+				node.y = (int) (ly/transform.getScaleY());
 				node.insert(chosen);
+				nodes.add(node);
 			}
 
 			chosen = node;
@@ -409,6 +467,7 @@ public class EdittableGraph extends JPanel implements MouseListener, MouseMotion
 
 		updateHidden();
 		selected = chosen;
+		this.repaint();
 	}
 
 	public void updateLinks(GraphNode onode, GraphNode nnode)
@@ -496,7 +555,7 @@ public class EdittableGraph extends JPanel implements MouseListener, MouseMotion
 		}
 		else if (selected instanceof GraphMethod)
 		{
-			ArrayList<GraphNode> moved = new ArrayList<GraphNode>();
+			HashSet<GraphNode> moved = new HashSet<GraphNode>();
 			moved.add((GraphNode) selected);
 			((GraphMethod) selected).move((int) (dx/transform.getScaleX()), (int) (dy/transform.getScaleY()), moved);
 		}
@@ -526,7 +585,7 @@ public class EdittableGraph extends JPanel implements MouseListener, MouseMotion
 			else if (!sn.inserted && inside != null)
 			{
 				sn.x = inside.x;
-				sn.y = ly;
+				sn.y = (int) (ly/transform.getScaleY());
 				inside.insert(sn);
 				sn.inserted = true;
 
@@ -534,12 +593,12 @@ public class EdittableGraph extends JPanel implements MouseListener, MouseMotion
 			}
 			else if (sn.inserted)
 			{
-				sn.y = ly;
+				sn.y = (int) (ly/transform.getScaleY());
 				((GraphNode) sn.parent).reorder();
 			}
 			else if (!sn.inserted) 
 			{
-				ArrayList<GraphNode> moved = new ArrayList<GraphNode>();
+				HashSet<GraphNode> moved = new HashSet<GraphNode>();
 				moved.add(sn);
 				sn.move((int) (dx/transform.getScaleX()), (int) (dy/transform.getScaleY()), moved);
 			}
@@ -642,7 +701,7 @@ public class EdittableGraph extends JPanel implements MouseListener, MouseMotion
 		
 		boolean loopChecked = false;
 		
-		HashMap<GraphNode, ArrayList<GraphExpression>> parents = new HashMap<GraphNode, ArrayList<GraphExpression>>();
+		HashMap<GraphNode, HashSet<GraphExpression>> parents = new HashMap<GraphNode, HashSet<GraphExpression>>();
 		LinkedList<GraphObject> objects = new LinkedList<GraphObject>();
 		Comparator<GraphObject> comparator = new Comparator<GraphObject>(){
 			@Override
@@ -783,7 +842,7 @@ public class EdittableGraph extends JPanel implements MouseListener, MouseMotion
 			Collections.sort(objects, comparator);
 		}
 
-		public void move(int dx, int dy, ArrayList<GraphNode> moved)
+		public void move(int dx, int dy, HashSet<GraphNode> moved)
 		{
 			x += dx;
 			y += dy;
@@ -800,7 +859,7 @@ public class EdittableGraph extends JPanel implements MouseListener, MouseMotion
 						{
 							for (GraphConnector c : exp.connectors)
 							{
-								if (c.linked != null && c.linked != this && (moved != null && !moved.contains(c.linked)))
+								if (c.linked != null && c.linked != this && c.linked.hidden && (moved != null && !moved.contains(c.linked)))
 								{
 									moved.add(c.linked);
 									c.linked.move(dx, dy, moved);
@@ -1312,6 +1371,109 @@ public class EdittableGraph extends JPanel implements MouseListener, MouseMotion
 					add(mi);
 				}
 			}
+		}
+	}
+	
+	class GraphLoop
+	{
+		HashMap<GraphNode, HashSet<GraphExpression>> parents = new HashMap<GraphNode, HashSet<GraphExpression>>();
+		HashSet<GraphNode> members;
+		
+		public GraphLoop(HashSet<GraphNode> nodes)
+		{
+			this.members = nodes;
+			
+			for (GraphNode n : nodes)
+			{
+				for (Map.Entry<GraphNode, HashSet<GraphExpression>> entry : n.parents.entrySet())
+				{
+					for (GraphExpression exp : entry.getValue())
+					{
+						addLink(entry.getKey(), exp);
+					}
+				}
+			}
+		}
+		
+		public void addMember(GraphNode node)
+		{
+			members.add(node);
+		}
+		
+		public boolean isSame(HashSet<GraphNode> nodes)
+		{
+			for (GraphNode node : nodes)
+			{
+				if (!members.contains(node)) return false;
+			}
+			for (GraphNode node : members)
+			{
+				if (!nodes.contains(node)) return false;
+			}
+			return true;
+		}
+		
+		public void addLink(GraphNode node, GraphExpression exp)
+		{
+			if (!members.contains(node))
+			{
+				if (!parents.containsKey(node))
+				{
+					parents.put(node, new HashSet<GraphExpression>());
+				}
+				parents.get(node).add(exp);
+			}
+		}
+		
+		public int shouldHide(GraphNode node)
+		{
+			if (!members.contains(node))
+			{
+				return -1;
+			}
+			else
+			{
+				int val = -1;
+				for (Map.Entry<GraphNode, HashSet<GraphExpression>> entry : parents.entrySet())
+				{				
+					if (entry.getKey().collapsed || entry.getKey().hidden)
+					{
+						val = 1;
+					}
+					else
+					{
+						for (GraphExpression exp : entry.getValue())
+						{
+							if (!exp.collapsed) return 0;
+							else val = 1;								
+						}
+					}
+				}
+				return val;
+			}
+		}
+		
+		public String toString()
+		{
+			String s = "";
+			
+			s+= "Members:\n";
+			for (GraphNode n : members)
+			{
+				s+="\t"+n.name+"\t"+n+"\n";
+			}
+			
+			s+="Links:\t";
+			for (Map.Entry<GraphNode, HashSet<GraphExpression>> entry : parents.entrySet())
+			{
+				s+="\t"+entry.getKey().name+"\t"+entry.getKey()+"\n";
+				for (GraphExpression exp : entry.getValue())
+				{
+					s+="\t\t"+exp.name+"\t"+exp;
+				}
+			}
+			
+			return s;
 		}
 	}
 

@@ -1,41 +1,24 @@
 {
 Wall: {
-	GraphData: { X: "1489", Y: "389" },
+	GraphData: { X: "710", Y: "515" },
 	Rule: MarkWindows,
 	Defer: {},
 	Split: [ "Window,empty", "Remainder,WallMesh" ]
 },
-Main: {
-	GraphData: { X: "128", Y: "27" },
-	Rule: BuildingDivider
-},
 WallMesh: {
-	GraphData: { X: "2021", Y: "477" },
+	GraphData: { X: "1162", Y: "515" },
 	Mesh: {
 		Name: Box,
-		TriplanarScale: "10",
-		Texture: data/textures/stone/stone01
+		Texture: data/textures/stone/stone01,
+		TriplanarScale: "10"
 	}
 },
-Building: {
-	GraphData: { X: "933", Y: "140" },
-	Select: [
-		"Bottom,1,WallMesh",
-		"Left,1,Wall,x-90yz",
-		"Right,1,Wall,x-90yz",
-		"Front,1,WallWithDoor",
-		"Back,1,Wall",
-		"Remainder,empty"
-	]
-},
-WallWithDoor: {
-	GraphData: { X: "1278", Y: "-130" },
-	Snap: { Y: "-1", X: "0", Z: "0" },
-	Occlude: { Name: Door, Y: "10", X: "5", Z: "150%" },
-	Split: [ "Door,empty", "Remainder,Wall" ]
+Main: {
+	GraphData: { X: "-731", Y: "65" },
+	Rule: BuildingDivider
 },
 MarkWindows: {
-	GraphData: { X: "1766", Y: "43" },
+	GraphData: { X: "947", Y: "29" },
 	Snap: { Y: "0", X: "0", Z: "0" },
 	Define: {
 		WindowPadding: "10",
@@ -51,8 +34,25 @@ MarkWindows: {
 		Rule: MarkWindow
 	}
 },
+WallWithDoor: {
+	GraphData: { X: "419", Y: "-92" },
+	Snap: { Y: "-1", X: "0", Z: "0" },
+	Occlude: { Name: Door, Y: "10", X: "5", Z: "150%" },
+	Split: [ "Door,empty", "Remainder,Wall" ]
+},
+Building: {
+	GraphData: { X: "74", Y: "178" },
+	Select: [
+		"Bottom,1,WallMesh",
+		"Left,1,Wall,x-90yz",
+		"Right,1,Wall,x-90yz",
+		"Front,1,WallWithDoor",
+		"Back,1,Wall",
+		"Remainder,empty"
+	]
+},
 Roof: {
-	GraphData: { X: "585", Y: "206" },
+	GraphData: { X: "-274", Y: "244" },
 	Resize: { X: "105%", Z: "105%" },
 	Mesh: {
 		Name: Box,
@@ -62,7 +62,7 @@ Roof: {
 	}
 },
 MarkWindow: {
-	GraphData: { X: "2210", Y: "21" },
+	GraphData: { X: "1432", Y: "371" },
 	Occlude: {
 		Name: Window,
 		Y: WindowHeight,
@@ -71,7 +71,7 @@ MarkWindow: {
 	}
 },
 BuildingDivider: {
-	GraphData: { X: "407", Y: "65" },
+	GraphData: { X: "-452", Y: "103" },
 	DivideY: [ "70%,Building", "30%,Roof" ]
 },
 empty: {}
