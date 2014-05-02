@@ -57,7 +57,7 @@ public abstract class EditFrame extends JFrame
 			add(new JLabel("X"), gc);
 			
 			String xtext = exp.data.containsKey("X") ? exp.data.get("X") : "100%";
-			final JTextField x = new JTextField(xtext, 5);
+			final JTextField x = new JTextField(xtext, 25);
 			
 			gc.gridx = 1;
 			add(x, gc);
@@ -68,7 +68,7 @@ public abstract class EditFrame extends JFrame
 			add(new JLabel("Y"), gc);
 			
 			String ytext = exp.data.containsKey("Y") ? exp.data.get("Y") : "100%";
-			final JTextField y = new JTextField(ytext, 5);
+			final JTextField y = new JTextField(ytext, 25);
 			
 			gc.gridx = 1;
 			add(y, gc);
@@ -79,7 +79,7 @@ public abstract class EditFrame extends JFrame
 			add(new JLabel("Z"), gc);
 			
 			String ztext = exp.data.containsKey("Z") ? exp.data.get("Z") : "100%";
-			final JTextField z = new JTextField(ztext, 5);
+			final JTextField z = new JTextField(ztext, 25);
 			
 			gc.gridx = 1;
 			add(z, gc);
@@ -158,7 +158,7 @@ public abstract class EditFrame extends JFrame
 			add(new JLabel("CoordinateSystem"), gc);
 			
 			String test = exp.data.get("Coords");
-			final JTextField t = new JTextField(test, 5);
+			final JTextField t = new JTextField(test, 25);
 			
 			gc.gridx = 1;
 			add(t, gc);
@@ -226,8 +226,8 @@ public abstract class EditFrame extends JFrame
 			{
 				JPanel panel = new JPanel();
 				
-				JTextField name = new JTextField(entry.getKey(), 10);
-				JTextField value = new JTextField(entry.getValue(), 10);
+				JTextField name = new JTextField(entry.getKey(), 25);
+				JTextField value = new JTextField(entry.getValue(), 25);
 				pairs.add(new JTextField[]{name, value});
 				
 				JButton delete = new JButton("Delete");
@@ -373,7 +373,7 @@ public abstract class EditFrame extends JFrame
 			{
 				JPanel panel = new JPanel();
 				
-				JTextField value = new JTextField(connector.name, 10);
+				JTextField value = new JTextField(connector.name, 25);
 				pairs.add(new Object[]{connector, value});
 				
 				JButton delete = new JButton("Delete");
@@ -481,7 +481,7 @@ public abstract class EditFrame extends JFrame
 			add(new JLabel("X"), gc);
 			
 			String xtext = exp.data.containsKey("X") ? exp.data.get("X") : "0";
-			final JTextField x = new JTextField(xtext, 5);
+			final JTextField x = new JTextField(xtext, 25);
 			
 			gc.gridx = 1;
 			add(x, gc);
@@ -492,7 +492,7 @@ public abstract class EditFrame extends JFrame
 			add(new JLabel("Y"), gc);
 			
 			String ytext = exp.data.containsKey("Y") ? exp.data.get("Y") : "0";
-			final JTextField y = new JTextField(ytext, 5);
+			final JTextField y = new JTextField(ytext, 25);
 			
 			gc.gridx = 1;
 			add(y, gc);
@@ -503,7 +503,7 @@ public abstract class EditFrame extends JFrame
 			add(new JLabel("Z"), gc);
 			
 			String ztext = exp.data.containsKey("Z") ? exp.data.get("Z") : "0";
-			final JTextField z = new JTextField(ztext, 5);
+			final JTextField z = new JTextField(ztext, 25);
 			
 			gc.gridx = 1;
 			add(z, gc);
@@ -582,7 +582,7 @@ public abstract class EditFrame extends JFrame
 			add(new JLabel("X"), gc);
 			
 			String xtext = exp.data.containsKey("X") ? exp.data.get("X") : "0";
-			final JTextField x = new JTextField(xtext, 5);
+			final JTextField x = new JTextField(xtext, 25);
 			
 			gc.gridx = 1;
 			add(x, gc);
@@ -593,7 +593,7 @@ public abstract class EditFrame extends JFrame
 			add(new JLabel("Y"), gc);
 			
 			String ytext = exp.data.containsKey("Y") ? exp.data.get("Y") : "0";
-			final JTextField y = new JTextField(ytext, 5);
+			final JTextField y = new JTextField(ytext, 25);
 			
 			gc.gridx = 1;
 			add(y, gc);
@@ -604,7 +604,7 @@ public abstract class EditFrame extends JFrame
 			add(new JLabel("Z"), gc);
 			
 			String ztext = exp.data.containsKey("Z") ? exp.data.get("Z") : "0";
-			final JTextField z = new JTextField(ztext, 5);
+			final JTextField z = new JTextField(ztext, 25);
 			
 			gc.gridx = 1;
 			add(z, gc);
@@ -672,7 +672,7 @@ public abstract class EditFrame extends JFrame
 			add(new JLabel("X"), gc);
 			
 			String xtext = exp.data.containsKey("X") ? exp.data.get("X") : "0";
-			final JTextField x = new JTextField(xtext, 5);
+			final JTextField x = new JTextField(xtext, 25);
 			
 			gc.gridx = 1;
 			add(x, gc);
@@ -683,7 +683,7 @@ public abstract class EditFrame extends JFrame
 			add(new JLabel("Y"), gc);
 			
 			String ytext = exp.data.containsKey("Y") ? exp.data.get("Y") : "1";
-			final JTextField y = new JTextField(ytext, 5);
+			final JTextField y = new JTextField(ytext, 25);
 			
 			gc.gridx = 1;
 			add(y, gc);
@@ -694,7 +694,7 @@ public abstract class EditFrame extends JFrame
 			add(new JLabel("Z"), gc);
 			
 			String ztext = exp.data.containsKey("Z") ? exp.data.get("Z") : "0";
-			final JTextField z = new JTextField(ztext, 5);
+			final JTextField z = new JTextField(ztext, 25);
 			
 			gc.gridx = 1;
 			add(z, gc);
@@ -705,7 +705,7 @@ public abstract class EditFrame extends JFrame
 			add(new JLabel("Angle"), gc);
 			
 			String angles = exp.data.get("Angle");
-			final JTextField angle = new JTextField(angles, 5);
+			final JTextField angle = new JTextField(angles, 25);
 			
 			gc.gridx = 1;
 			add(angle, gc);
@@ -792,7 +792,7 @@ public abstract class EditFrame extends JFrame
 			{
 				JPanel panel = new JPanel();
 				
-				JTextField value = new JTextField(connector.name, 20);
+				JTextField value = new JTextField(connector.name, 25);
 				pairs.add(new Object[]{connector, value});
 				
 				JButton delete = new JButton("Delete");
@@ -930,8 +930,8 @@ public abstract class EditFrame extends JFrame
 				JComboBox<String> choice = new JComboBox<String>(new String[]{"Left", "Right", "Top", "Bottom", "Front", "Back"});
 				choice.setSelectedItem(side);
 				
-				JTextField value = new JTextField(size, 20);
-				JTextField coords = new JTextField(coord, 7);
+				JTextField value = new JTextField(size, 25);
+				JTextField coords = new JTextField(coord, 25);
 				
 				pairs.add(new Object[]{connector, choice, value, coords});
 				
@@ -1083,7 +1083,7 @@ public abstract class EditFrame extends JFrame
 			{
 				JPanel panel = new JPanel();
 				
-				JTextField value = new JTextField(connector.name, 20);
+				JTextField value = new JTextField(connector.name, 25);
 				pairs.add(new Object[]{connector, value});
 				
 				JButton delete = new JButton("Delete");
@@ -1197,7 +1197,7 @@ public abstract class EditFrame extends JFrame
 			add(new JLabel("X"), gc);
 			
 			String xtext = exp.data.containsKey("X") ? exp.data.get("X") : "100%";
-			final JTextField x = new JTextField(xtext, 5);
+			final JTextField x = new JTextField(xtext, 25);
 			
 			gc.gridx = 1;
 			add(x, gc);
@@ -1208,7 +1208,7 @@ public abstract class EditFrame extends JFrame
 			add(new JLabel("Y"), gc);
 			
 			String ytext = exp.data.containsKey("Y") ? exp.data.get("Y") : "100%";
-			final JTextField y = new JTextField(ytext, 5);
+			final JTextField y = new JTextField(ytext, 25);
 			
 			gc.gridx = 1;
 			add(y, gc);
@@ -1219,7 +1219,7 @@ public abstract class EditFrame extends JFrame
 			add(new JLabel("Z"), gc);
 			
 			String ztext = exp.data.containsKey("Z") ? exp.data.get("Z") : "100%";
-			final JTextField z = new JTextField(ztext, 5);
+			final JTextField z = new JTextField(ztext, 25);
 			
 			gc.gridx = 1;
 			add(z, gc);
@@ -1230,7 +1230,7 @@ public abstract class EditFrame extends JFrame
 			add(new JLabel("Offset X"), gc);
 			
 			String oxtext = exp.data.containsKey("OX") ? exp.data.get("OX") : "0";
-			final JTextField ox = new JTextField(oxtext, 5);
+			final JTextField ox = new JTextField(oxtext, 25);
 			
 			gc.gridx = 1;
 			add(ox, gc);
@@ -1241,7 +1241,7 @@ public abstract class EditFrame extends JFrame
 			add(new JLabel("Offset Y"), gc);
 			
 			String oytext = exp.data.containsKey("OY") ? exp.data.get("OY") : "0";
-			final JTextField oy = new JTextField(oytext, 5);
+			final JTextField oy = new JTextField(oytext, 25);
 			
 			gc.gridx = 1;
 			add(oy, gc);
@@ -1252,7 +1252,7 @@ public abstract class EditFrame extends JFrame
 			add(new JLabel("Offset Z"), gc);
 			
 			String oztext = exp.data.containsKey("OZ") ? exp.data.get("OZ") : "0";
-			final JTextField oz = new JTextField(oztext, 5);
+			final JTextField oz = new JTextField(oztext, 25);
 			
 			gc.gridx = 1;
 			add(oz, gc);
@@ -1263,7 +1263,7 @@ public abstract class EditFrame extends JFrame
 			add(new JLabel("Name"), gc);
 			
 			String names = exp.data.get("Name");
-			final JTextField name = new JTextField(names, 5);
+			final JTextField name = new JTextField(names, 25);
 			
 			gc.gridx = 1;
 			add(name, gc);
@@ -1381,7 +1381,7 @@ public abstract class EditFrame extends JFrame
 			top.add(new JLabel("Size"), gc);
 			
 			String sizes = exp.data.get("Size");
-			final JTextField size = new JTextField(sizes, 5);
+			final JTextField size = new JTextField(sizes, 25);
 			
 			gc.gridx = 1;
 			top.add(size, gc);
@@ -1392,7 +1392,7 @@ public abstract class EditFrame extends JFrame
 			top.add(new JLabel("Repeats"), gc);
 			
 			String repeats = exp.data.containsKey("Repeats") ? exp.data.get("Repeats") : "-1";
-			final JTextField repeat = new JTextField(repeats, 5);
+			final JTextField repeat = new JTextField(repeats, 25);
 			
 			gc.gridx = 1;
 			top.add(repeat, gc);
@@ -1403,7 +1403,7 @@ public abstract class EditFrame extends JFrame
 			top.add(new JLabel("Offset"), gc);
 			
 			String offsets = exp.data.containsKey("Offset") ? exp.data.get("Offset") : "0";
-			final JTextField offset = new JTextField(offsets, 5);
+			final JTextField offset = new JTextField(offsets, 25);
 			
 			gc.gridx = 1;
 			top.add(offset, gc);
@@ -1414,7 +1414,7 @@ public abstract class EditFrame extends JFrame
 			top.add(new JLabel("RuleCoord"), gc);
 			
 			String rulecoords = exp.data.containsKey("RuleCoord") ? exp.data.get("RuleCoord") : "xyz";
-			final JTextField rulecoord = new JTextField(rulecoords, 5);
+			final JTextField rulecoord = new JTextField(rulecoords, 25);
 			
 			gc.gridx = 1;
 			top.add(rulecoord, gc);
@@ -1436,7 +1436,7 @@ public abstract class EditFrame extends JFrame
 			top.add(new JLabel("OffsetCoord"), gc);
 			
 			String offsetcoords = exp.data.containsKey("OffsetCoord") ? exp.data.get("OffsetCoord") : "xyz";
-			final JTextField offsetcoord = new JTextField(offsetcoords, 5);
+			final JTextField offsetcoord = new JTextField(offsetcoords, 25);
 			
 			gc.gridx = 1;
 			top.add(offsetcoord, gc);
@@ -1458,7 +1458,7 @@ public abstract class EditFrame extends JFrame
 			top.add(new JLabel("RemainderCoord"), gc);
 			
 			String remaindercoords = exp.data.containsKey("RemainderCoord") ? exp.data.get("RemainderCoord") : "xyz";
-			final JTextField remaindercoord = new JTextField(remaindercoords, 5);
+			final JTextField remaindercoord = new JTextField(remaindercoords, 25);
 			
 			gc.gridx = 1;
 			top.add(remaindercoord, gc);
@@ -1646,7 +1646,7 @@ public abstract class EditFrame extends JFrame
 			top.add(new JLabel("Mesh Name"), gc);
 			
 			String names = exp.data.containsKey("Name") ? exp.data.get("Name") : "MeshName" ;
-			final JTextField name = new JTextField(names, 15);
+			final JTextField name = new JTextField(names, 25);
 			
 			gc.gridx = 1;
 			top.add(name, gc);
@@ -1657,7 +1657,7 @@ public abstract class EditFrame extends JFrame
 			top.add(new JLabel("Texture Name"), gc);
 			
 			String textures = exp.data.containsKey("Texture") ? exp.data.get("Texture") : "TextureName" ;
-			final JTextField texture = new JTextField(textures, 15);
+			final JTextField texture = new JTextField(textures, 25);
 			
 			gc.gridx = 1;
 			top.add(texture, gc);
@@ -1679,7 +1679,7 @@ public abstract class EditFrame extends JFrame
 			top.add(new JLabel("Triplanar Scale"), gc);
 			
 			String tripscales = exp.data.containsKey("TriplanarScale") ? exp.data.get("TriplanarScale") : "1" ;
-			final JTextField tripscale = new JTextField(tripscales, 15);
+			final JTextField tripscale = new JTextField(tripscales, 25);
 			
 			gc.gridx = 1;
 			top.add(tripscale, gc);
@@ -1747,7 +1747,7 @@ public abstract class EditFrame extends JFrame
 			top.add(new JLabel("Loft X"), gc);
 			
 			String loftxs = exp.data.containsKey("loftX") ? exp.data.get("loftX") : "100%" ;
-			final JTextField loftx = new JTextField(loftxs, 15);
+			final JTextField loftx = new JTextField(loftxs, 25);
 			
 			gc.gridx = 1;
 			top.add(loftx, gc);
@@ -1758,7 +1758,7 @@ public abstract class EditFrame extends JFrame
 			top.add(new JLabel("Loft Z"), gc);
 			
 			String loftzs = exp.data.containsKey("loftZ") ? exp.data.get("loftZ") : "100%" ;
-			final JTextField loftz = new JTextField(loftzs, 15);
+			final JTextField loftz = new JTextField(loftzs, 25);
 			
 			gc.gridx = 1;
 			top.add(loftz, gc);
@@ -1769,7 +1769,7 @@ public abstract class EditFrame extends JFrame
 			top.add(new JLabel("Snap X"), gc);
 			
 			String snapxs = exp.data.containsKey("snapX") ? exp.data.get("snapX") : "0" ;
-			final JTextField snapx = new JTextField(snapxs, 15);
+			final JTextField snapx = new JTextField(snapxs, 25);
 			
 			gc.gridx = 1;
 			top.add(snapx, gc);
@@ -1780,7 +1780,7 @@ public abstract class EditFrame extends JFrame
 			top.add(new JLabel("Snap Z"), gc);
 			
 			String snapzs = exp.data.containsKey("snapZ") ? exp.data.get("snapZ") : "0" ;
-			final JTextField snapz = new JTextField(snapzs, 15);
+			final JTextField snapz = new JTextField(snapzs, 25);
 			
 			gc.gridx = 1;
 			top.add(snapz, gc);
@@ -1791,7 +1791,7 @@ public abstract class EditFrame extends JFrame
 			top.add(new JLabel("Texture Name"), gc);
 			
 			String textures = exp.data.containsKey("Texture") ? exp.data.get("Texture") : "TextureName" ;
-			final JTextField texture = new JTextField(textures, 15);
+			final JTextField texture = new JTextField(textures, 25);
 			
 			gc.gridx = 1;
 			top.add(texture, gc);
@@ -1813,7 +1813,7 @@ public abstract class EditFrame extends JFrame
 			top.add(new JLabel("Triplanar Scale"), gc);
 			
 			String tripscales = exp.data.containsKey("TriplanarScale") ? exp.data.get("TriplanarScale") : "1" ;
-			final JTextField tripscale = new JTextField(tripscales, 15);
+			final JTextField tripscale = new JTextField(tripscales, 25);
 			
 			gc.gridx = 1;
 			top.add(tripscale, gc);
@@ -1900,7 +1900,7 @@ public abstract class EditFrame extends JFrame
 			top.add(new JLabel("Phi"), gc);
 			
 			String phis = exp.data.containsKey("Phi") ? exp.data.get("Phi") : "8" ;
-			final JTextField phi = new JTextField(phis, 15);
+			final JTextField phi = new JTextField(phis, 25);
 			
 			gc.gridx = 1;
 			top.add(phi, gc);
@@ -1911,7 +1911,7 @@ public abstract class EditFrame extends JFrame
 			top.add(new JLabel("Hollow Scale"), gc);
 			
 			String hollows = exp.data.containsKey("HollowScale") ? exp.data.get("HollowScale") : "0" ;
-			final JTextField hollow = new JTextField(hollows, 15);
+			final JTextField hollow = new JTextField(hollows, 25);
 			
 			gc.gridx = 1;
 			top.add(hollow, gc);
@@ -1922,7 +1922,7 @@ public abstract class EditFrame extends JFrame
 			top.add(new JLabel("Texture Name"), gc);
 			
 			String textures = exp.data.containsKey("Texture") ? exp.data.get("Texture") : "TextureName" ;
-			final JTextField texture = new JTextField(textures, 15);
+			final JTextField texture = new JTextField(textures, 25);
 			
 			gc.gridx = 1;
 			top.add(texture, gc);
@@ -1944,7 +1944,7 @@ public abstract class EditFrame extends JFrame
 			top.add(new JLabel("Triplanar Scale"), gc);
 			
 			String tripscales = exp.data.containsKey("TriplanarScale") ? exp.data.get("TriplanarScale") : "1" ;
-			final JTextField tripscale = new JTextField(tripscales, 15);
+			final JTextField tripscale = new JTextField(tripscales, 25);
 			
 			gc.gridx = 1;
 			top.add(tripscale, gc);
@@ -2046,7 +2046,7 @@ public abstract class EditFrame extends JFrame
 			{
 				JPanel panel = new JPanel();
 				
-				JTextField name = new JTextField(i, 10);
+				JTextField name = new JTextField(i, 25);
 				pairs.add(name);
 				
 				JButton delete = new JButton("Delete");

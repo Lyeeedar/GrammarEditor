@@ -1,28 +1,78 @@
 {
+Wall: {
+	GraphData: { X: "1489", Y: "389" },
+	Rule: MarkWindows,
+	Defer: {},
+	Split: [ "Window,empty", "Remainder,WallMesh" ]
+},
 Main: {
-	GraphData: { X: -22, Y: -53 },
-	Rule: WallSelector
+	GraphData: { X: "128", Y: "27" },
+	Rule: BuildingDivider
 },
-BasicBox: {
-	GraphData: { X: 670, Y: -72 },
-	Mesh: { Name: Box, Texture: data/textures/blank }
-},
-AutoAssignedName: {
-	GraphData: { X: 436, Y: 114 },
-	Define: { i: i+1 }
-},
-WallSelector: {
-	GraphData: { X: 151, Y: -38 },
-	Define: { i: 1 },
-	RepeatZ: {
-		Size: 1,
-		Rule: AutoAssignedName0,
-		RepeatRule: AutoAssignedName
+WallMesh: {
+	GraphData: { X: "2021", Y: "477" },
+	Mesh: {
+		Name: Box,
+		TriplanarScale: "10",
+		Texture: data/textures/stone/stone01
 	}
 },
-AutoAssignedName0: {
-	GraphData: { X: 455, Y: -34 },
-	DivideY: [ "i,BasicBox", "(100%)-i,empty" ]
+Building: {
+	GraphData: { X: "933", Y: "140" },
+	Select: [
+		"Bottom,1,WallMesh",
+		"Left,1,Wall,x-90yz",
+		"Right,1,Wall,x-90yz",
+		"Front,1,WallWithDoor",
+		"Back,1,Wall",
+		"Remainder,empty"
+	]
+},
+WallWithDoor: {
+	GraphData: { X: "1278", Y: "-130" },
+	Snap: { Y: "-1", X: "0", Z: "0" },
+	Occlude: { Name: Door, Y: "10", X: "5", Z: "150%" },
+	Split: [ "Door,empty", "Remainder,Wall" ]
+},
+MarkWindows: {
+	GraphData: { X: "1766", Y: "43" },
+	Snap: { Y: "0", X: "0", Z: "0" },
+	Define: {
+		WindowPadding: "10",
+		WindowWidth: "5",
+		WindowHeight: "5"
+	},
+	Define: {
+		OffsetPadding: "mod(X, WindowWidth+WindowPadding*2)/2"
+	},
+	RepeatX: {
+		Offset: OffsetPadding,
+		Size: WindowWidth+WindowPadding*2,
+		Rule: MarkWindow
+	}
+},
+Roof: {
+	GraphData: { X: "585", Y: "206" },
+	Resize: { X: "105%", Z: "105%" },
+	Mesh: {
+		Name: Box,
+		loftZ: "60%",
+		loftX: "60%",
+		Texture: data/textures/stone/stone03
+	}
+},
+MarkWindow: {
+	GraphData: { X: "2210", Y: "21" },
+	Occlude: {
+		Name: Window,
+		Y: WindowHeight,
+		X: WindowWidth,
+		Z: "150%"
+	}
+},
+BuildingDivider: {
+	GraphData: { X: "407", Y: "65" },
+	DivideY: [ "70%,Building", "30%,Roof" ]
 },
 empty: {}
 }

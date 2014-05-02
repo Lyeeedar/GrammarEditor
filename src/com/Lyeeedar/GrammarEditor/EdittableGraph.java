@@ -8,6 +8,9 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Path2D;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -19,6 +22,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.swing.JFrame;
 import javax.swing.JMenuItem;
@@ -45,6 +49,7 @@ import com.Lyeeedar.GrammarEditor.GraphCompiler.GraphDeferCompiler;
 import com.Lyeeedar.GrammarEditor.GraphCompiler.GraphDefineCompiler;
 import com.Lyeeedar.GrammarEditor.GraphCompiler.GraphDivideCompiler;
 import com.Lyeeedar.GrammarEditor.GraphCompiler.GraphMeshCompiler;
+import com.Lyeeedar.GrammarEditor.GraphCompiler.GraphMethodCompiler;
 import com.Lyeeedar.GrammarEditor.GraphCompiler.GraphMoveCompiler;
 import com.Lyeeedar.GrammarEditor.GraphCompiler.GraphMultiConditionalCompiler;
 import com.Lyeeedar.GrammarEditor.GraphCompiler.GraphNodeCompiler;
@@ -56,11 +61,12 @@ import com.Lyeeedar.GrammarEditor.GraphCompiler.GraphRuleCompiler;
 import com.Lyeeedar.GrammarEditor.GraphCompiler.GraphSelectCompiler;
 import com.Lyeeedar.GrammarEditor.GraphCompiler.GraphSnapCompiler;
 import com.Lyeeedar.GrammarEditor.GraphCompiler.GraphSplitCompiler;
+import com.Lyeeedar.Util.Pair;
 import com.badlogic.gdx.utils.Json;
 import com.badlogic.gdx.utils.JsonReader;
 import com.badlogic.gdx.utils.JsonValue;
 
-public class EdittableGraph extends JPanel implements MouseListener, MouseMotionListener
+public class EdittableGraph extends JPanel implements MouseListener, MouseMotionListener, MouseWheelListener
 {
 	public static void main(String[] args)
 	{
@@ -89,7 +95,11 @@ public class EdittableGraph extends JPanel implements MouseListener, MouseMotion
 	{
 		this.addMouseListener(this);
 		this.addMouseMotionListener(this);
+		this.addMouseWheelListener(this);
 		createMenuItems();
+		
+		transform.setToScale(0.8, 0.8);
+		
 		revalidate();
 		repaint();
 	}
@@ -164,8 +174,8 @@ public class EdittableGraph extends JPanel implements MouseListener, MouseMotion
 			public void actionPerformed(ActionEvent arg0)
 			{
 				GraphNode node = new GraphNode("", null);
-				node.x = lx;
-				node.y = ly;
+				node.x = (int) (lx/transform.getScaleX());
+				node.y = (int) (ly/transform.getScaleY());
 				nodes.add(node);
 				repaint();
 			}
@@ -177,8 +187,8 @@ public class EdittableGraph extends JPanel implements MouseListener, MouseMotion
 			public void actionPerformed(ActionEvent arg0)
 			{
 				GraphMethod node = new GraphMethod("RuleCall");
-				node.x = lx;
-				node.y = ly;
+				node.x = (int) (lx/transform.getScaleX());
+				node.y = (int) (ly/transform.getScaleY());
 				nodes.add(node);
 				repaint();
 			}
@@ -193,23 +203,12 @@ public class EdittableGraph extends JPanel implements MouseListener, MouseMotion
 			}
 		}
 		});
-		
-		menuItems.add(new Object[]{"Compile", new ActionListener()
-		{
-			@Override
-			public void actionPerformed(ActionEvent arg0)
-			{
-				System.out.println(compile());
-			}
-		}
-		});
 	}
 
 	private void markLoops()
 	{
 		for (GraphNode node : nodes)
 		{
-			node.depth = 0;
 			node.inLoop = false;
 		}
 		
@@ -217,17 +216,68 @@ public class EdittableGraph extends JPanel implements MouseListener, MouseMotion
 		{
 			for (GraphNode n : nodes)
 			{
-				n.depth = 0;
+				n.loopChecked = false;
 			}
 			
-			node.depth = 1;
-			node.updateDepth();
+			LinkedList<GraphNode> processList = new LinkedList<GraphNode>();
+			processList.addLast(node);
 			
+			outer:
+			while (!processList.isEmpty())
+			{
+				GraphNode n = processList.removeFirst();
+				for (Entry<GraphNode, ArrayList<GraphExpression>> entry : n.parents.entrySet())
+				{
+					if (entry.getKey() == node)
+					{
+						node.inLoop = true;
+						break outer;
+					}
+					
+					if (!entry.getKey().loopChecked)
+					{
+						entry.getKey().loopChecked = true;
+						processList.addLast(entry.getKey());
+					}
+				}
+			}
+		}
+	}
+	
+	private void markParents()
+	{
+		for (GraphNode node : nodes)
+		{
+			node.parents.clear();
+			
+			for (GraphNode n : nodes)
+			{
+				for (GraphObject o : n.objects)
+				{
+					if (o instanceof GraphExpression)
+					{
+						GraphExpression exp = (GraphExpression) o;
+						
+						for (GraphConnector c : exp.connectors)
+						{
+							if (c.linked == node)
+							{
+								if (!node.parents.containsKey(n))
+								{
+									node.parents.put(n, new ArrayList<GraphExpression>());
+								}
+								node.parents.get(n).add(exp);
+							}
+						}
+					}
+				}
+			}
 		}
 	}
 	
 	private void updateHidden()
 	{
+		markParents();
 		markLoops();
 		
 		int i = 0;
@@ -258,32 +308,46 @@ public class EdittableGraph extends JPanel implements MouseListener, MouseMotion
 	private boolean shouldCollapse(GraphNode n)
 	{
 		int sval = -1;
-		for (GraphNode node : nodes)
+		for (Map.Entry<GraphNode, ArrayList<GraphExpression>> entry : n.parents.entrySet())
 		{
-			if (node == n) continue;
+			if (entry.getKey() == n) return false;
 			
-			int val = node.shouldCollapse(n);
-			if (val == 0) return false;
-			if (val == 1) sval = 1;
+			if (entry.getKey().collapsed || entry.getKey().hidden)
+			{
+				sval = 1;
+			}
+			else
+			{
+				for (GraphExpression exp : entry.getValue())
+				{
+					if (exp.collapsed) sval = 1;
+					else return false;
+				}
+			}
 		}
 		
 		return sval == 1;
 	}
 	
+	AffineTransform transform = new AffineTransform();
 	@Override
 	public void paint(Graphics g) 
 	{
 		super.paint(g);
+				
+		Graphics2D g2d = (Graphics2D) g;
+		g2d.transform(transform);
 
 		for (GraphNode node : nodes)
 		{
-			if (!node.hidden) node.paint(g);
+			if (!node.hidden) node.paint(g2d);
 		}
 
 		if (selected != null && selected instanceof GraphConnector)
 		{
 			selected.getAbsolutePos(out);
-			g.drawLine(out[0]+40+((GraphConnector)selected).name.length()*6, out[1]+12, lx, ly);
+			g2d.setColor(Color.WHITE);
+			g2d.drawLine(out[0]+40+((GraphConnector)selected).name.length()*6, out[1]+12, (int) (lx/transform.getScaleX()), (int) (ly/transform.getScaleY()));
 		}
 	}
 
@@ -305,7 +369,7 @@ public class EdittableGraph extends JPanel implements MouseListener, MouseMotion
 		GraphObject chosen = null;
 		for (GraphNode node : nodes)
 		{
-			GraphObject s = node.getItem(arg0.getX(), arg0.getY(), true);
+			GraphObject s = node.getItem((int) (lx/transform.getScaleX()), (int) (ly/transform.getScaleY()), true);
 			if (s != null)
 			{
 				chosen = s;
@@ -318,7 +382,7 @@ public class EdittableGraph extends JPanel implements MouseListener, MouseMotion
 			if (arg0.getButton() == MouseEvent.BUTTON3)
 			{
 				PopupMenu pm = new PopupMenu(menuItems);
-				pm.show(this, lx, ly);
+				pm.show(this, arg0.getX(), arg0.getY());
 				chosen = empty;
 			}
 		}
@@ -381,7 +445,7 @@ public class EdittableGraph extends JPanel implements MouseListener, MouseMotion
 			boolean needsBreak = true;
 			for (GraphNode n : nodes)
 			{
-				GraphObject o = n.getItem(lx, ly, false);
+				GraphObject o = n.getItem((int) (lx/transform.getScaleX()), (int) (ly/transform.getScaleY()), false);
 				if (o != null && o instanceof GraphNode)
 				{
 					((GraphConnector)selected).addLink(n);
@@ -427,12 +491,14 @@ public class EdittableGraph extends JPanel implements MouseListener, MouseMotion
 		{
 			for (GraphNode node : this.nodes)
 			{
-				node.move(dx, dy);
+				node.move((int) (dx/transform.getScaleX()), (int) (dy/transform.getScaleY()), null);
 			}
 		}
 		else if (selected instanceof GraphMethod)
 		{
-			((GraphMethod) selected).move(dx, dy);
+			ArrayList<GraphNode> moved = new ArrayList<GraphNode>();
+			moved.add((GraphNode) selected);
+			((GraphMethod) selected).move((int) (dx/transform.getScaleX()), (int) (dy/transform.getScaleY()), moved);
 		}
 		else if (selected instanceof GraphNode)
 		{
@@ -442,7 +508,7 @@ public class EdittableGraph extends JPanel implements MouseListener, MouseMotion
 			for (GraphNode node : this.nodes)
 			{
 				if (node == sn) continue;
-				else if (node.getItem(lx, ly, false) != null)
+				else if (node.getItem((int) (lx/transform.getScaleX()), (int) (ly/transform.getScaleY()), false) != null)
 				{
 					inside = node;
 				}
@@ -451,8 +517,8 @@ public class EdittableGraph extends JPanel implements MouseListener, MouseMotion
 			if (sn.inserted && inside == null)
 			{
 				((GraphNode) sn.parent).remove(sn);
-				sn.x = lx;
-				sn.y = ly;
+				sn.x = (int) (lx/transform.getScaleX());
+				sn.y = (int) (ly/transform.getScaleY());
 				sn.inserted = false;
 
 				this.nodes.add(sn);
@@ -471,7 +537,12 @@ public class EdittableGraph extends JPanel implements MouseListener, MouseMotion
 				sn.y = ly;
 				((GraphNode) sn.parent).reorder();
 			}
-			else if (!sn.inserted) sn.move(dx, dy);
+			else if (!sn.inserted) 
+			{
+				ArrayList<GraphNode> moved = new ArrayList<GraphNode>();
+				moved.add(sn);
+				sn.move((int) (dx/transform.getScaleX()), (int) (dy/transform.getScaleY()), moved);
+			}
 		}
 
 		this.repaint();
@@ -480,10 +551,25 @@ public class EdittableGraph extends JPanel implements MouseListener, MouseMotion
 	@Override
 	public void mouseMoved(MouseEvent arg0){}
 
+	@Override
+	public void mouseWheelMoved(MouseWheelEvent arg0)
+	{
+		double sclx = transform.getScaleX();
+		double scly = transform.getScaleY();
+		
+		double d = arg0.getPreciseWheelRotation() / -100.0;
+		
+		sclx += d;
+		scly += d;
+		
+		transform.setToScale(sclx, scly);
+		
+		repaint();
+	}
+	
 	public abstract class GraphObject
 	{
 		String name;
-		int depth;
 		boolean collapsed = false;
 
 		int x = 0;
@@ -545,8 +631,6 @@ public class EdittableGraph extends JPanel implements MouseListener, MouseMotion
 		public abstract void paint(Graphics g, int x, int y);
 		public abstract void updateLinks(GraphNode onode, GraphNode nnode);
 		public abstract void rightClicked(Component e, int x, int y);
-		public abstract int shouldCollapse(GraphNode node);
-		public abstract void updateDepth();
 	}
 
 	public class GraphNode extends GraphObject
@@ -555,7 +639,10 @@ public class EdittableGraph extends JPanel implements MouseListener, MouseMotion
 		boolean hidden = false;
 		boolean inserted = false;
 		boolean inLoop = false;
-		boolean isStart = false;
+		
+		boolean loopChecked = false;
+		
+		HashMap<GraphNode, ArrayList<GraphExpression>> parents = new HashMap<GraphNode, ArrayList<GraphExpression>>();
 		LinkedList<GraphObject> objects = new LinkedList<GraphObject>();
 		Comparator<GraphObject> comparator = new Comparator<GraphObject>(){
 			@Override
@@ -570,6 +657,12 @@ public class EdittableGraph extends JPanel implements MouseListener, MouseMotion
 		public GraphNode(String name, GraphObject parent)
 		{
 			super(name, parent, GraphNodeCompiler.class);
+			createMenuItems();
+		}
+		
+		public GraphNode(String name, GraphObject parent, Class compilerClass)
+		{
+			super(name, parent, compilerClass);
 			createMenuItems();
 		}
 
@@ -619,7 +712,7 @@ public class EdittableGraph extends JPanel implements MouseListener, MouseMotion
 			createMenuItem(menuItems, "Defer", null, GraphDeferCompiler.class, new String[][]{}, new String[]{});
 			createMenuItem(menuItems, "Define", DefineEditFrame.class, GraphDefineCompiler.class, new String[][]{}, new String[]{});
 			createMenuItem(menuItems, "DivideX", DivideEditFrame.class, GraphDivideCompiler.class, new String[][]{}, new String[]{"50%", "50%"}, "Divide");
-			createMenuItem(menuItems, "Mesh", MeshEditFrame.class, GraphMeshCompiler.class, new String[][]{{"Type", "File"}, {"Name", "MeshName"}, {"Texture", "TextureName"}}, new String[]{});
+			createMenuItem(menuItems, "Mesh", MeshEditFrame.class, GraphMeshCompiler.class, new String[][]{{"Type", "Box"}, {"Texture", "data/textures/blank"}}, new String[]{});
 			createMenuItem(menuItems, "Move", MoveEditFrame.class, GraphMoveCompiler.class, new String[][]{}, new String[]{});
 			createMenuItem(menuItems, "MultiConditional", MultiConditionalEditFrame.class, GraphMultiConditionalCompiler.class, new String[][]{}, new String[]{"1==1", "else"});
 			createMenuItem(menuItems, "Occlude", OccludeEditFrame.class, GraphOccludeCompiler.class, new String[][]{{"Name", "OcclusionName"}}, new String[]{});
@@ -690,10 +783,33 @@ public class EdittableGraph extends JPanel implements MouseListener, MouseMotion
 			Collections.sort(objects, comparator);
 		}
 
-		public void move(int dx, int dy)
+		public void move(int dx, int dy, ArrayList<GraphNode> moved)
 		{
 			x += dx;
 			y += dy;
+			
+			if (moved != null)
+			{
+				for (GraphObject o : objects)
+				{
+					if (o instanceof GraphExpression)
+					{
+						GraphExpression exp = (GraphExpression) o;
+						
+						if (hidden || collapsed || exp.collapsed)
+						{
+							for (GraphConnector c : exp.connectors)
+							{
+								if (c.linked != null && c.linked != this && (moved != null && !moved.contains(c.linked)))
+								{
+									moved.add(c.linked);
+									c.linked.move(dx, dy, moved);
+								}
+							}
+						}
+					}
+				}
+			}
 		}
 
 		public void paint(Graphics g) 
@@ -806,36 +922,6 @@ public class EdittableGraph extends JPanel implements MouseListener, MouseMotion
 		{
 			PopupMenu pm = new PopupMenu(menuItems);
 			pm.show(e, x, y);
-		}
-
-		public int shouldCollapse(GraphNode node)
-		{
-			int sval = -1;
-			for (GraphObject obj : objects)
-			{
-				int val = obj.shouldCollapse(node);
-				if (val == 0)
-				{
-					if (hidden) return 1;
-					else if (collapsed) return 1;
-					else return 0;
-				}
-				else if (val == 1)
-				{
-					sval = 1;
-				}
-			}
-			return sval;
-		}
-
-		@Override
-		public void updateDepth()
-		{
-			for (GraphObject obj : objects)
-			{
-				obj.depth = depth;
-				obj.updateDepth();
-			}
 		}
 	}
 
@@ -1039,35 +1125,7 @@ public class EdittableGraph extends JPanel implements MouseListener, MouseMotion
 			PopupMenu pm = new PopupMenu(menuItems);
 			pm.show(e, x, y);
 		}
-	
-		public int shouldCollapse(GraphNode node)
-		{
-			int sval = -1;
-			for (GraphConnector connector : connectors)
-			{
-				int val = connector.shouldCollapse(node);
-				if (val == 0)
-				{
-					if (collapsed) return 1;
-					else return 0;
-				}
-				else if (val == 1)
-				{
-					sval = 1;
-				}
-			}
-			return sval;
-		}
 
-		@Override
-		public void updateDepth()
-		{
-			for (GraphConnector connector : connectors)
-			{
-				connector.depth = depth;
-				connector.updateDepth();
-			}
-		}
 	}
 
 	public class GraphConnector extends GraphObject
@@ -1083,7 +1141,11 @@ public class EdittableGraph extends JPanel implements MouseListener, MouseMotion
 		{
 			if (linked != null)
 			{
-				return linked.assignedName;
+				if (linked instanceof GraphMethod)
+				{
+					return linked.name;
+				}
+				else return linked.assignedName;
 			}
 			else return "empty";
 		}
@@ -1118,6 +1180,7 @@ public class EdittableGraph extends JPanel implements MouseListener, MouseMotion
 				path.moveTo(x+40+name.length()*6, y+12);
 				path.curveTo(x+40+name.length()*6+offset, y+12, out[0]-offset+10, out[1]+12, out[0]+10, out[1]+12);
 				Graphics2D g2d = (Graphics2D)g;
+				g2d.setColor(Color.WHITE);
 				g2d.draw(path);
 			}
 		}
@@ -1148,36 +1211,7 @@ public class EdittableGraph extends JPanel implements MouseListener, MouseMotion
 		{
 			linked = null;
 		}
-	
-		public int shouldCollapse(GraphNode node)
-		{
-			if (linked == node)
-			{
-				return 0;
-			}
-			else
-			{
-				return -1;
-			}
-		}
 
-		@Override
-		public void updateDepth()
-		{
-			if (linked != null)
-			{
-				if (linked.depth != 0 && linked.depth != depth+1)
-				{
-					linked.depth = depth+1;
-					linked.inLoop = true;
-				}
-				else if (linked.depth != depth+1)
-				{
-					linked.depth = depth+1;
-					linked.updateDepth();
-				}
-			}
-		}
 	}
 
 	class GraphBlank extends GraphObject
@@ -1209,17 +1243,6 @@ public class EdittableGraph extends JPanel implements MouseListener, MouseMotion
 		{			
 		}
 
-		public int shouldCollapse(GraphNode node)
-		{
-			return -1;
-		}
-
-		@Override
-		public void updateDepth()
-		{
-			// TODO Auto-generated method stub
-			
-		}
 	}
 
 	class GraphMethod extends GraphNode
@@ -1227,7 +1250,7 @@ public class EdittableGraph extends JPanel implements MouseListener, MouseMotion
 
 		public GraphMethod(String name)
 		{
-			super(name, null);
+			super(name, null, GraphMethodCompiler.class);
 		}
 		
 		@Override		
@@ -1291,4 +1314,6 @@ public class EdittableGraph extends JPanel implements MouseListener, MouseMotion
 			}
 		}
 	}
+
+
 }

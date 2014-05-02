@@ -376,24 +376,10 @@ public class Main extends JFrame {
 		top.add(left, BorderLayout.CENTER);
 		top.add(right, BorderLayout.EAST);
 
-		setLayout(new GridBagLayout());
+		setLayout(new GridLayout(2, 1));
 		
-		GridBagConstraints gc = new GridBagConstraints();
-
-		gc.fill = GridBagConstraints.BOTH;
-		
-		gc.gridx = 0;
-		gc.gridy = 0;
-		gc.weightx = 1;
-		gc.weighty = 1;
-		
-		add(top, gc);
-		
-		gc.gridx = 0;
-		gc.gridy = 1;
-		gc.weighty = 3;
-		
-		add(bottom, gc);	
+		add(top);
+		add(bottom);	
 		
 		bottom.add(graph);
 	}

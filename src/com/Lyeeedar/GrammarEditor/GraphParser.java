@@ -19,6 +19,7 @@ import com.Lyeeedar.GrammarEditor.EditFrame.SnapEditFrame;
 import com.Lyeeedar.GrammarEditor.EditFrame.SplitEditFrame;
 import com.Lyeeedar.GrammarEditor.EdittableGraph.GraphConnector;
 import com.Lyeeedar.GrammarEditor.EdittableGraph.GraphExpression;
+import com.Lyeeedar.GrammarEditor.EdittableGraph.GraphMethod;
 import com.Lyeeedar.GrammarEditor.EdittableGraph.GraphNode;
 import com.Lyeeedar.GrammarEditor.GraphCompiler.GraphChildCompiler;
 import com.Lyeeedar.GrammarEditor.GraphCompiler.GraphCoordinateSystemCompiler;
@@ -49,20 +50,6 @@ public class GraphParser
 		this.root = root;
 	}
 	
-	private boolean isStart(LinkedList<GraphNode> nodes, GraphNode n)
-	{
-		for (GraphNode node : nodes)
-		{
-			if (node == n) continue;
-			
-			int val = node.shouldCollapse(n);
-			if (val == 0) return false;
-			if (val == 1) return false;
-		}
-		
-		return true;
-	}
-	
 	public void parse(EdittableGraph graph)
 	{
 		JsonValue current = root.child;
@@ -80,9 +67,19 @@ public class GraphParser
 			else
 			{
 				String name = current.name;
-				GraphNode node = graph.new GraphNode(name, null);
 				
-				pairs.put(name, new Object[]{node, current});
+				if (name.startsWith("RuleCall_"))
+				{
+					GraphMethod node = graph.new GraphMethod(name.substring(9));
+					
+					pairs.put(name.substring(9), new Object[]{node, current});
+				}
+				else
+				{
+					GraphNode node = graph.new GraphNode(name, null);
+					
+					pairs.put(name, new Object[]{node, current});
+				}
 			}
 			
 			current = current.next;

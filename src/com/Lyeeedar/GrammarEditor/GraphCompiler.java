@@ -4,6 +4,7 @@ import java.util.Map;
 
 import com.Lyeeedar.GrammarEditor.EdittableGraph.GraphConnector;
 import com.Lyeeedar.GrammarEditor.EdittableGraph.GraphExpression;
+import com.Lyeeedar.GrammarEditor.EdittableGraph.GraphMethod;
 import com.Lyeeedar.GrammarEditor.EdittableGraph.GraphNode;
 import com.Lyeeedar.GrammarEditor.EdittableGraph.GraphObject;
 import com.Lyeeedar.Pirates.ProceduralGeneration.VolumePartitioner;
@@ -29,12 +30,37 @@ public abstract class GraphCompiler
 			
 			code += object.assignedName + " : {";
 			
-			code += "GraphData:{X:"+object.x+",Y:"+object.y+"},";
+			code += "GraphData:{X:\""+object.x+"\",Y:\""+object.y+"\"},";
 			
 			for (GraphObject o : object.objects)
 			{
 				code += o.compile();
 			}
+			
+			code += "},";
+			
+			return code;
+		}
+		
+	}
+	
+	public static class GraphMethodCompiler extends GraphCompiler
+	{
+		GraphMethod object;
+		
+		public GraphMethodCompiler(GraphObject object)
+		{
+			this.object = (GraphMethod) object;
+		}
+
+		@Override
+		public String compile()
+		{
+			String code = "";
+			
+			code += "RuleCall_" + object.name + " : {";
+			
+			code += "GraphData:{X:\""+object.x+"\",Y:\""+object.y+"\"},";
 			
 			code += "},";
 			
@@ -127,7 +153,7 @@ public abstract class GraphCompiler
 			
 			for (Map.Entry<String, String> entry : object.data.entrySet())
 			{
-				code += entry.getKey() + " : " +entry.getValue() + ",";
+				code += entry.getKey() + " : \"" +entry.getValue() + "\",";
 			}
 			
 			code += "},";
@@ -190,7 +216,7 @@ public abstract class GraphCompiler
 			for (Map.Entry<String, String> entry : object.data.entrySet())
 			{
 				if (entry.getKey().equalsIgnoreCase("Type")) continue;
-				code += entry.getKey() + " : " +entry.getValue() + ",";
+				code += entry.getKey() + " : \"" +entry.getValue() + "\",";
 			}
 			
 			code += "},";
@@ -214,7 +240,7 @@ public abstract class GraphCompiler
 			
 			for (Map.Entry<String, String> entry : object.data.entrySet())
 			{
-				code += entry.getKey() + " : " +entry.getValue() + ",";
+				code += entry.getKey() + " : \"" +entry.getValue() + "\",";
 			}
 			
 			code += "},";
@@ -263,7 +289,7 @@ public abstract class GraphCompiler
 			
 			for (Map.Entry<String, String> entry : object.data.entrySet())
 			{
-				code += entry.getKey() + " : " +entry.getValue() + ",";
+				code += entry.getKey() + " : \"" +entry.getValue() + "\",";
 			}
 			
 			code += "},";
@@ -288,7 +314,7 @@ public abstract class GraphCompiler
 			
 			for (Map.Entry<String, String> entry : object.data.entrySet())
 			{
-				code += entry.getKey() + " : " +entry.getValue() + ",";
+				code += entry.getKey() + " : \"" +entry.getValue() + "\",";
 			}
 			
 			for (GraphConnector connector : object.connectors)
@@ -318,7 +344,7 @@ public abstract class GraphCompiler
 			
 			for (Map.Entry<String, String> entry : object.data.entrySet())
 			{
-				code += entry.getKey() + " : " +entry.getValue() + ",";
+				code += entry.getKey() + " : \"" +entry.getValue() + "\",";
 			}
 			
 			code += "},";
@@ -343,7 +369,7 @@ public abstract class GraphCompiler
 			
 			for (Map.Entry<String, String> entry : object.data.entrySet())
 			{
-				code += entry.getKey() + " : " +entry.getValue() + ",";
+				code += entry.getKey() + " : \"" +entry.getValue() + "\",";
 			}
 			
 			code += "},";
@@ -397,7 +423,7 @@ public abstract class GraphCompiler
 			
 			for (Map.Entry<String, String> entry : object.data.entrySet())
 			{
-				code += entry.getKey() + " : " +entry.getValue() + ",";
+				code += entry.getKey() + " : \"" +entry.getValue() + "\",";
 			}
 			
 			code += "},";
